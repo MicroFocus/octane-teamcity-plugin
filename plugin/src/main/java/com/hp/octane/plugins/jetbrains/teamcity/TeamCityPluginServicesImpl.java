@@ -139,7 +139,7 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 	}
 
 	@Override
-	public CIJobsList getJobsList(boolean includeParameters) {
+	public CIJobsList getJobsList(boolean includeParameters, Long workspaceId ) {
 		SUser impersonatedUser = getImpersonatedUser();
 		if (impersonatedUser == null) {
 			return modelCommonFactory.createProjectList();
