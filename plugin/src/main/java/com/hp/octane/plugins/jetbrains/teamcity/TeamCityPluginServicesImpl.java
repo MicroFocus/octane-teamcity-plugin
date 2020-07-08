@@ -27,10 +27,7 @@ import com.hp.octane.integrations.dto.parameters.CIParameter;
 import com.hp.octane.integrations.dto.parameters.CIParameters;
 import com.hp.octane.integrations.dto.pipelines.PipelineNode;
 import com.hp.octane.integrations.dto.snapshots.SnapshotNode;
-import com.hp.octane.integrations.dto.tests.BuildContext;
-import com.hp.octane.integrations.dto.tests.TestRun;
-import com.hp.octane.integrations.dto.tests.TestRunResult;
-import com.hp.octane.integrations.dto.tests.TestsResult;
+import com.hp.octane.integrations.dto.tests.*;
 import com.hp.octane.integrations.exceptions.PermissionException;
 import com.hp.octane.integrations.utils.CIPluginSDKUtils;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigStructure;
@@ -139,7 +136,7 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 	}
 
 	@Override
-	public CIJobsList getJobsList(boolean includeParameters, Long workspaceId ) {
+	public CIJobsList getJobsList(boolean includeParameters, Long workspaceId) {
 		SUser impersonatedUser = getImpersonatedUser();
 		if (impersonatedUser == null) {
 			return modelCommonFactory.createProjectList();
@@ -274,9 +271,8 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 	}
 
 	private List<TestRun> createTestList(SFinishedBuild build) {
-		List<TestRun> result = new ArrayList<TestRun>();
-		BuildStatistics stats = build.getBuildStatistics(new BuildStatisticsOptions());
-		for (STestRun testRun : stats.getTests(null, BuildStatistics.Order.NATURAL_ASC)) {
+		List<TestRun> result = new ArrayList<>();
+		for (STestRun testRun : build.getBuildStatistics(BuildStatisticsOptions.ALL_TESTS_NO_DETAILS).getAllTests()) {
 			TestRunResult testResultStatus = null;
 			if (testRun.isIgnored()) {
 				testResultStatus = TestRunResult.SKIPPED;
@@ -302,6 +298,13 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 						.setResult(testResultStatus)
 						.setStarted(build.getStartDate().getTime())
 						.setDuration((long) testRun.getDuration());
+				if (testResultStatus.equals(TestRunResult.FAILED)) {
+					TestRunError testError = dtoFactory.newDTO(TestRunError.class);
+					String rawError = testRun.getFullText();
+					testError.setErrorMessage(rawError.split("\\t")[0]);
+					testError.setStackTrace(rawError);
+					tr.setError(testError);
+				}
 				result.add(tr);
 			}
 		}
