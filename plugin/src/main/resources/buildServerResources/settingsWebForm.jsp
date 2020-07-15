@@ -18,6 +18,8 @@
 <html>
 <head>
     <script>
+        var csrfToken = getCsrfToken();
+
         function loadDoc() {
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function () {
@@ -38,23 +40,20 @@
         function decodeEntities(encodedString) {
             var translate_re = /&(nbsp|amp|quot|lt|gt);/g;
             var translate = {
-                "nbsp":" ",
-                "amp" : "&",
+                "nbsp": " ",
+                "amp": "&",
                 "quot": "\"",
-                "lt"  : "<",
-                "gt"  : ">"
+                "lt": "<",
+                "gt": ">"
             };
-            return encodedString.replace(translate_re, function(match, entity) {
+            return encodedString.replace(translate_re, function (match, entity) {
                 return translate[entity];
-            }).replace(/&#(\d+);/gi, function(match, numStr) {
+            }).replace(/&#(\d+);/gi, function (match, numStr) {
                 var num = parseInt(numStr, 10);
                 return String.fromCharCode(num);
             });
         }
-    </script>
 
-
-    <script>
         function getConfCount() {
             var count = document.getElementsByName("spConfigTable").length - 1;
             if (count < 0) {
@@ -178,11 +177,14 @@
             // var parameters = "action=save";
             xhttp.open("POST", getServletURL(), true);
             xhttp.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+            if(csrfToken) {
+                xhttp.setRequestHeader('X-TC-CSRF-Token', csrfToken);
+            }
             xhttp.send(JSON.stringify(config));
         }
 
         function getServletURL() {
-            var rootURL =  window.location.href;
+            var rootURL = window.location.href;
             rootURL = rootURL.split("/admin")[0];
             <%--var rootURL = "${conf.getServerUrl()}";--%>
             if (!rootURL) {
@@ -191,15 +193,24 @@
             return rootURL + "/octane-rest/";
         }
 
-    </script>
+        function getCsrfToken() {
+            var rootURL = window.location.href;
+            rootURL = rootURL.split("/admin")[0];
 
-    <script>
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("GET", rootURL + "/authenticationTest.html?csrf", false);
+            xhttp.send();
+            if (xhttp.status === 200) {
+                var token = xhttp.responseText;
+                return token;
+            }
+        }
+
         function deleteConnection(id) {
             var toDelete = [];
             var table = document.getElementById("connectionsTable" + id);
             table.parentNode.removeChild(table);
         }
-
 
 
         function checkConnection(index) {
@@ -230,6 +241,9 @@
 
             xhttp.open("POST", getServletURL(), true);
             xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            if(csrfToken) {
+                xhttp.setRequestHeader('X-TC-CSRF-Token', csrfToken);
+            }
             xhttp.send(parameters);
         }
 
