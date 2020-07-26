@@ -22,9 +22,7 @@ import com.hp.octane.integrations.dto.parameters.CIParameterType;
 import jetbrains.buildServer.serverSide.SBuild;
 import jetbrains.buildServer.serverSide.SBuildType;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by gullery on 22/03/2016.
@@ -38,41 +36,65 @@ public class TCPluginParametersFactory {
 		CIParameter tmp;
 
 		if (buildType != null && !buildType.getParameters().isEmpty()) {
-			for (Map.Entry<String, String> parameter : buildType.getParameters().entrySet()) {
+			Set<String> paramsNames = getParametersNameSet(buildType.getParameters());
+			for (String paramName : paramsNames) {
+				String name = getOriginalParamName(paramName);
 				tmp = dtoFactory.newDTO(CIParameter.class)
 						.setType(CIParameterType.STRING)
-						.setName(parameter.getKey())
-						.setDescription("Value location: " + parameter.getValue())
-						.setValue(parameter.getValue())
-						.setDefaultValue(parameter.getValue());
+						.setName(name)
+						.setDescription("Value location: " + buildType.getParameters().get(paramName))
+						.setValue(buildType.getParameters().get(paramName));
 				result.add(tmp);
 			}
 		}
-
 		return result;
+	}
+
+	private String getOriginalParamName(String paramName) {
+		String name = paramName;
+		if (paramName.startsWith("build.my")) {
+			name = paramName.substring("build.my.".length(), paramName.length());
+		}
+		return name;
+	}
+
+
+	private Set<String> getParametersNameSet(Map<String, String> parameters) {
+		Set<String> paramsNames = new HashSet<>();
+		for (Map.Entry<String, String> parameter : parameters.entrySet()) {
+			String name = parameter.getKey();
+			if (parameter.getKey().startsWith("build.my")) {
+				name = parameter.getKey().substring("build.my.".length(), parameter.getKey().length());
+			}
+			if (isNotVisibleParam(name)) {
+				continue;
+			}
+			if (paramsNames.contains(name) && parameter.getKey().startsWith("build.my")) {
+				paramsNames.remove(name);
+				paramsNames.add(parameter.getKey());
+			} else if (!parameter.getKey().startsWith("build.my") && paramsNames.contains("build.my." + name)) {
+				continue;
+			} else {
+				paramsNames.add(parameter.getKey());
+			}
+		}
+		return paramsNames;
 	}
 
 	public List<CIParameter> obtainFromBuild(SBuild build) {
 		List<CIParameter> result = new LinkedList<>();
 		CIParameter tmp;
-
 		if (build != null && !build.getBuildOwnParameters().isEmpty()) {
-			for (Map.Entry<String, String> parameter : build.getBuildOwnParameters().entrySet()) {
-				String name = parameter.getKey();
-				if (parameter.getKey().startsWith("build.my")) {
-					name = parameter.getKey().substring("build.my.".length(), parameter.getKey().length());
-				}
-				if (isNotVisibleParam(name)) {
-					continue;
-				}
+			Set<String> paramsNames = getParametersNameSet(build.getBuildOwnParameters());
+			for (String paramName : paramsNames) {
+				String name = getOriginalParamName(paramName);
 				tmp = dtoFactory.newDTO(CIParameter.class)
 						.setType(CIParameterType.STRING)
 						.setName(name)
-						.setValue(parameter.getValue());
+						.setValue(build.getBuildOwnParameters().get(paramName));
 				result.add(tmp);
 			}
 		}
-
 		return result;
 	}
 
