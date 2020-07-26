@@ -75,6 +75,7 @@ public class ProgressEventsListener extends BuildServerAdapter implements Parame
 					.setProject(queuedBuild.getBuildType().getExternalId())
 					.setProjectDisplayName(queuedBuild.getBuildType().getName())
 					.setStartTime(System.currentTimeMillis())
+					.setParameters(tcPluginParametersFactory.obtainFromBuildType(queuedBuild.getBuildType()))
 					.setCauses(new ArrayList<>());
 			OctaneSDK.getClients().forEach(client -> client.getEventsService().publishEvent(event));
 		}
@@ -120,6 +121,7 @@ public class ProgressEventsListener extends BuildServerAdapter implements Parame
 				.setNumber(build.getBuildNumber())
 				.setEstimatedDuration(build.getDurationEstimate() * 1000)
 				.setStartTime(System.currentTimeMillis())
+				.setParameters(tcPluginParametersFactory.obtainFromBuild(build))
 				.setPhaseType(PhaseType.INTERNAL)
 				.setScmData(ScmUtils.getScmData(build));
 
