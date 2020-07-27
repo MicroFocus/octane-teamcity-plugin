@@ -42,7 +42,7 @@ public class TCPluginParametersFactory {
 				tmp = dtoFactory.newDTO(CIParameter.class)
 						.setType(CIParameterType.STRING)
 						.setName(name)
-						.setDescription(buildType.getParameters().get(paramName))
+						.setDescription("")
 						.setDefaultValue(buildType.getParameters().get(name))
 						.setValue( buildType.getParameters().get(paramName));
 				result.add(tmp);
