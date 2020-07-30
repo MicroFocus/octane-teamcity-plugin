@@ -39,6 +39,11 @@ public class TCPluginParametersFactory {
 			Set<String> paramsNames = getParametersNameSet(buildType.getParameters());
 			for (String paramName : paramsNames) {
 				String name = getOriginalParamName(paramName);
+				//do not pass parameters of type password to Octane
+				if (buildType.getOwnParameter(name).getControlDescription() != null &&
+						"password".equals(buildType.getOwnParameter(name).getControlDescription().getParameterType())){
+					continue;
+				}
 				tmp = dtoFactory.newDTO(CIParameter.class)
 						.setType(CIParameterType.STRING)
 						.setName(name)
