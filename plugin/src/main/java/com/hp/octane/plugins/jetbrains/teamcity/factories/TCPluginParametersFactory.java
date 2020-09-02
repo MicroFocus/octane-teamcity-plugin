@@ -40,7 +40,8 @@ public class TCPluginParametersFactory {
 			for (String paramName : paramsNames) {
 				String name = getOriginalParamName(paramName);
 				//do not pass parameters of type password to Octane
-				if (buildType.getOwnParameter(name).getControlDescription() != null &&
+				if (buildType.getOwnParameter(name) != null &&
+						buildType.getOwnParameter(name).getControlDescription() != null &&
 						"password".equals(buildType.getOwnParameter(name).getControlDescription().getParameterType())){
 					continue;
 				}
