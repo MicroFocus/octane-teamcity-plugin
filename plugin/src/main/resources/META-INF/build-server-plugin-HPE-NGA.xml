@@ -26,8 +26,7 @@
 
     <bean id="commonFactory" name="commonFactory"
           class="com.hp.octane.plugins.jetbrains.teamcity.factories.ModelCommonFactory"/>
-    <bean id="snapshotsFactory" name="snapshotsFactory"
-          class="com.hp.octane.plugins.jetbrains.teamcity.factories.SnapshotsFactory"/>
+
     <bean id="parametersFactory" name="parametersFactory"
           class="com.hp.octane.plugins.jetbrains.teamcity.factories.TCPluginParametersFactory"/>
     <bean id="genericOctaneActionsController" name="genericOctaneActionsController"

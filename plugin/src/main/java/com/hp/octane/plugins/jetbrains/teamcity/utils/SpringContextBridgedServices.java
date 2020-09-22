@@ -2,7 +2,6 @@ package com.hp.octane.plugins.jetbrains.teamcity.utils;
 
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHolder;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.ModelCommonFactory;
-import com.hp.octane.plugins.jetbrains.teamcity.factories.SnapshotsFactory;
 import jetbrains.buildServer.serverSide.BuildServerEx;
 import jetbrains.buildServer.serverSide.ProjectManager;
 import jetbrains.buildServer.serverSide.parameters.ParameterFactory;
@@ -15,8 +14,6 @@ public interface SpringContextBridgedServices {
 	BuildServerEx getSBuildServer();
 
 	ModelCommonFactory getModelCommonFactory();
-
-	SnapshotsFactory getSnapshotsFactory();
 
 	PluginDescriptor getPluginDescriptor();
 

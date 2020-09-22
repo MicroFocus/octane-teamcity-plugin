@@ -26,14 +26,12 @@ import com.hp.octane.integrations.dto.general.CIServerTypes;
 import com.hp.octane.integrations.dto.parameters.CIParameter;
 import com.hp.octane.integrations.dto.parameters.CIParameters;
 import com.hp.octane.integrations.dto.pipelines.PipelineNode;
-import com.hp.octane.integrations.dto.snapshots.SnapshotNode;
 import com.hp.octane.integrations.dto.tests.*;
 import com.hp.octane.integrations.exceptions.PermissionException;
 import com.hp.octane.integrations.utils.CIPluginSDKUtils;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigStructure;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHolder;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.ModelCommonFactory;
-import com.hp.octane.plugins.jetbrains.teamcity.factories.SnapshotsFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.testrunner.TeamCityTestsToRunConverterBuilder;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SpringContextBridge;
 import jetbrains.buildServer.Build;
@@ -67,7 +65,6 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 	private ProjectManager projectManager;
 	private BuildServerEx buildServerEx;
 	private ModelCommonFactory modelCommonFactory;
-	private SnapshotsFactory snapshotsFactory;
 	private PluginDescriptor pluginDescriptor;
 	private UserModel userModel;
 	private TCConfigurationHolder holder;
@@ -77,7 +74,6 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 		projectManager = SpringContextBridge.services().getProjectManager();
 		buildServerEx = SpringContextBridge.services().getSBuildServer();
 		modelCommonFactory = SpringContextBridge.services().getModelCommonFactory();
-		snapshotsFactory = SpringContextBridge.services().getSnapshotsFactory();
 		pluginDescriptor = SpringContextBridge.services().getPluginDescriptor();
 		userModel = buildServerEx.getUserModel();
 		holder = SpringContextBridge.services().getTCConfigurationHolder();
@@ -156,17 +152,6 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 	@Override
 	public PipelineNode getPipeline(String rootJobCiId) {
 		return modelCommonFactory.createStructure(rootJobCiId);
-	}
-
-	@Override
-	public SnapshotNode getSnapshotLatest(String jobCiId, boolean subTree) {
-		return snapshotsFactory.createSnapshot(jobCiId);
-	}
-
-	//  TODO: implement
-	@Override
-	public SnapshotNode getSnapshotByNumber(String jobCiId, String buildCiId, boolean subTree) {
-		return null;
 	}
 
 	@Override
