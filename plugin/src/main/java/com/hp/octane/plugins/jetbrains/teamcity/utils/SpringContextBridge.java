@@ -2,7 +2,6 @@ package com.hp.octane.plugins.jetbrains.teamcity.utils;
 
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHolder;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.ModelCommonFactory;
-import com.hp.octane.plugins.jetbrains.teamcity.factories.SnapshotsFactory;
 import jetbrains.buildServer.serverSide.BuildServerEx;
 import jetbrains.buildServer.serverSide.ProjectManager;
 import jetbrains.buildServer.serverSide.parameters.ParameterFactory;
@@ -20,8 +19,6 @@ public class SpringContextBridge implements SpringContextBridgedServices, Applic
 	BuildServerEx sBuildServer;
 	@Autowired
 	ModelCommonFactory modelCommonFactory;
-	@Autowired
-	SnapshotsFactory snapshotsFactory;
 	@Autowired
 	private PluginDescriptor pluginDescriptor;
 	@Autowired
@@ -46,11 +43,6 @@ public class SpringContextBridge implements SpringContextBridgedServices, Applic
 	@Override
 	public ModelCommonFactory getModelCommonFactory() {
 		return modelCommonFactory;
-	}
-
-	@Override
-	public SnapshotsFactory getSnapshotsFactory() {
-		return snapshotsFactory;
 	}
 
 	@Override

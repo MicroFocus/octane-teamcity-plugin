@@ -22,10 +22,12 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.hp.octane.integrations.OctaneConfiguration;
 import com.hp.octane.integrations.OctaneSDK;
-import com.hp.octane.integrations.exceptions.OctaneSDKGeneralException;
 import com.hp.octane.integrations.utils.OctaneUrlParser;
 import com.hp.octane.plugins.jetbrains.teamcity.TeamCityPluginServicesImpl;
-import com.hp.octane.plugins.jetbrains.teamcity.configuration.*;
+import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigMultiSharedSpaceStructure;
+import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigStructure;
+import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHolder;
+import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationService;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,20 +66,17 @@ public class ConfigurationActionsController implements Controller {
 			try {
 				if ("test".equalsIgnoreCase(action)) {
 					String server = httpServletRequest.getParameter("server");
-					OctaneUrlParser octaneUrlParser;
 					try {
-						octaneUrlParser = OctaneUrlParser.parse(server);
 						String apiKey = httpServletRequest.getParameter("username");
 						String secret = httpServletRequest.getParameter("password");
 
-						OctaneConfiguration testedOctaneConfiguration = new OctaneConfiguration(UUID.randomUUID().toString(),
-								octaneUrlParser.getLocation(),
-								octaneUrlParser.getSharedSpace());
+						OctaneConfiguration testedOctaneConfiguration = OctaneConfiguration.createWithUiLocation(UUID.randomUUID().toString(),
+								server);
 						testedOctaneConfiguration.setClient(apiKey);
 						testedOctaneConfiguration.setSecret(secret);
 						String impersonatedUser = httpServletRequest.getParameter("impersonatedUser");
 						returnStr = configurationService.checkConfiguration(testedOctaneConfiguration, impersonatedUser);
-					} catch (OctaneSDKGeneralException error){
+					} catch (Exception error){
 						returnStr = buildResponseStringEmptyConfigsWithError(error.getMessage());
 					}
 				} else {
@@ -157,11 +156,11 @@ public class ConfigurationActionsController implements Controller {
 				OctaneUrlParser octaneUrlParser;
 				try {
 					octaneUrlParser = checkAndUpdateIdentityAndLocationIfNotTheSame(newConf);
-				} catch (OctaneSDKGeneralException error){
+				} catch (Exception error){
 					return buildResponseStringEmptyConfigsWithError(error.getMessage());
 
 				}
-				OctaneConfiguration octaneConfiguration = new OctaneConfiguration(newConf.getIdentity(), newConf.getLocation(),
+				OctaneConfiguration octaneConfiguration = OctaneConfiguration.create(newConf.getIdentity(), newConf.getLocation(),
 						octaneUrlParser.getSharedSpace());
 				octaneConfiguration.setClient(newConf.getUsername());
 				octaneConfiguration.setSecret(newConf.getSecretPassword());
@@ -181,20 +180,19 @@ public class ConfigurationActionsController implements Controller {
 				OctaneUrlParser octaneUrlParser;
 				try {
 					octaneUrlParser = OctaneUrlParser.parse(newConf.getUiLocation());
-				} catch (OctaneSDKGeneralException error){
+				} catch (Exception error){
 					return buildResponseStringEmptyConfigsWithError(error.getMessage());
 
 				}
 
 				String sp = octaneUrlParser.getSharedSpace();
 				String location = octaneUrlParser.getLocation();
-				octaneConfiguration.setUrl(newConf.getUiLocation());
+				octaneConfiguration.setUiLocation(newConf.getUiLocation());
 				result.setUiLocation(newConf.getUiLocation());
 				octaneConfiguration.setClient(newConf.getUsername());
 				result.setUsername(newConf.getUsername());
 				octaneConfiguration.setSecret(newConf.getSecretPassword());
 				result.setSecretPassword(newConf.getSecretPassword());
-				octaneConfiguration.setSharedSpace(sp);
 				result.setSharedSpace(sp);
 				result.setLocation(location);
 				result.setImpersonatedUser(newConf.getImpersonatedUser());
@@ -204,7 +202,7 @@ public class ConfigurationActionsController implements Controller {
 		return save();
 	}
 
-	private OctaneUrlParser checkAndUpdateIdentityAndLocationIfNotTheSame(OctaneConfigStructure newConf) throws OctaneSDKGeneralException{
+	private OctaneUrlParser checkAndUpdateIdentityAndLocationIfNotTheSame(OctaneConfigStructure newConf){
 
 	    String identity = newConf.getIdentity();
 		OctaneUrlParser octaneUrlParser = OctaneUrlParser.parse(newConf.getUiLocation());

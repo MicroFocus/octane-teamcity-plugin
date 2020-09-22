@@ -86,7 +86,7 @@ public class OctaneTeamCityPlugin implements ServerExtension {
                if (config.getLocation() == null || config.getLocation().isEmpty()) {
 
                }
-               OctaneConfiguration octaneConfiguration = new OctaneConfiguration(config.getIdentity(), config.getLocation(),
+               OctaneConfiguration octaneConfiguration = OctaneConfiguration.create(config.getIdentity(), config.getLocation(),
                        config.getSharedSpace());
                octaneConfiguration.setClient(config.getUsername());
                octaneConfiguration.setSecret(config.getSecretPassword());
