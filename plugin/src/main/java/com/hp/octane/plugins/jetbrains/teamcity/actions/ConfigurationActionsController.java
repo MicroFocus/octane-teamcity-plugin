@@ -76,7 +76,7 @@ public class ConfigurationActionsController implements Controller {
 						testedOctaneConfiguration.setSecret(secret);
 						String impersonatedUser = httpServletRequest.getParameter("impersonatedUser");
 						returnStr = configurationService.checkConfiguration(testedOctaneConfiguration, impersonatedUser);
-					} catch (Exception error){
+					} catch (Exception error) {
 						returnStr = buildResponseStringEmptyConfigsWithError(error.getMessage());
 					}
 				} else {
@@ -115,9 +115,13 @@ public class ConfigurationActionsController implements Controller {
 		}
 		Set<String> configToRemove = new HashSet<>();
 		for (String identity : origConfigs.keySet()) {
-			if (!newConfigIdentities.contains(identity)){
+			if (!newConfigIdentities.contains(identity)) {
 				logger.info("Removing client with instance Id: " + identity);
-				OctaneSDK.removeClient(OctaneSDK.getClientByInstanceId(identity));
+				try {
+					OctaneSDK.removeClient(OctaneSDK.getClientByInstanceId(identity));
+				} catch (Exception ex) {
+					logger.error("Failed to remove SDK client. Trying to continue anyway ", ex);
+				}
 				configToRemove.add(identity);
 			}
 		}
@@ -156,7 +160,7 @@ public class ConfigurationActionsController implements Controller {
 				OctaneUrlParser octaneUrlParser;
 				try {
 					octaneUrlParser = checkAndUpdateIdentityAndLocationIfNotTheSame(newConf);
-				} catch (Exception error){
+				} catch (Exception error) {
 					return buildResponseStringEmptyConfigsWithError(error.getMessage());
 
 				}
@@ -180,7 +184,7 @@ public class ConfigurationActionsController implements Controller {
 				OctaneUrlParser octaneUrlParser;
 				try {
 					octaneUrlParser = OctaneUrlParser.parse(newConf.getUiLocation());
-				} catch (Exception error){
+				} catch (Exception error) {
 					return buildResponseStringEmptyConfigsWithError(error.getMessage());
 
 				}
@@ -202,9 +206,9 @@ public class ConfigurationActionsController implements Controller {
 		return save();
 	}
 
-	private OctaneUrlParser checkAndUpdateIdentityAndLocationIfNotTheSame(OctaneConfigStructure newConf){
+	private OctaneUrlParser checkAndUpdateIdentityAndLocationIfNotTheSame(OctaneConfigStructure newConf) {
 
-	    String identity = newConf.getIdentity();
+		String identity = newConf.getIdentity();
 		OctaneUrlParser octaneUrlParser = OctaneUrlParser.parse(newConf.getUiLocation());
 		newConf.setLocation(octaneUrlParser.getLocation());
 
