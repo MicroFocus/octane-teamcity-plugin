@@ -89,7 +89,7 @@
         <dependency>
             <artifactId>integrations-sdk</artifactId>
             <groupId>com.hpe.adm.octane.ciplugins</groupId>
-            <version>2.6.4.38</version>
+            <version>2.6.5.34</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.servlet</groupId>
@@ -105,12 +105,6 @@
             <artifactId>tests-support</artifactId>
             <version>${teamcity-version}</version>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
         </dependency>
     </dependencies>
 

@@ -33,6 +33,7 @@ import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigStruct
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHolder;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.ModelCommonFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.testrunner.TeamCityTestsToRunConverterBuilder;
+import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SpringContextBridge;
 import jetbrains.buildServer.Build;
 import jetbrains.buildServer.serverSide.*;
@@ -45,7 +46,6 @@ import jetbrains.buildServer.users.UserModel;
 import jetbrains.buildServer.util.ExceptionUtil;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
@@ -59,7 +59,8 @@ import java.util.*;
  */
 
 public class TeamCityPluginServicesImpl extends CIPluginServices {
-	private static final Logger log = LogManager.getLogger(TeamCityPluginServicesImpl.class);
+	private static final Logger log = SDKBasedLoggerProvider.getInstance().getLogger(TeamCityPluginServicesImpl.class);
+
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
 	private final int MAX_SIZE = 255;
 	private ProjectManager projectManager;
@@ -110,16 +111,16 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 	}
 
 	@Override
-	public File getAllowedOctaneStorage() {
+	public  File getAllowedOctaneStorage() {
 		return new File(buildServerEx.getServerRootPath(), "logs");
 	}
 
 	@Override
 	public CIProxyConfiguration getProxyConfiguration(URL targetHostUrl) {
-		log.info("get proxy configuration");
+		log.debug("get proxy configuration");
 		CIProxyConfiguration result = null;
 		if (isProxyNeeded(targetHostUrl)) {
-			log.info("proxy is required for host " + targetHostUrl.getHost());
+			log.debug("proxy is required for host " + targetHostUrl.getHost());
 			Map<String, String> propertiesMap = parseProperties(System.getenv("TEAMCITY_SERVER_OPTS"));
 			String protocol = "D" + targetHostUrl.getProtocol();
 			result = dtoFactory.newDTO(CIProxyConfiguration.class)
@@ -155,16 +156,16 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 	}
 
 	@Override
-	public void runPipeline(String jobCiId, String originalBody) {
+	public void runPipeline(String jobCiId, CIParameters ciParameters) {
 		SBuildType buildType = findBuildType(jobCiId);
 		if (buildType != null) {
-			setJobParams(originalBody, buildType);
+			setJobParams(ciParameters, buildType);
 			buildType.addToQueue("ngaRemoteExecution");
 		}
 	}
 
 	@Override
-	public void stopPipelineRun(String jobCiId, String originalBody) {
+	public void stopPipelineRun(String jobCiId, CIParameters ciParameters) {
 		SBuildType buildType = findBuildType(jobCiId);
 		if (buildType != null) {
 			SUser impersonatedUser = getImpersonatedUser();
@@ -178,10 +179,8 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 		}
 	}
 
-	private void setJobParams(String originalBody, SBuildType buildType) {
-		if (originalBody != null && !originalBody.isEmpty() && originalBody.contains("parameters") &&
-				!buildType.getParameters().isEmpty()) {
-			CIParameters ciParameters = DTOFactory.getInstance().dtoFromJson(originalBody, CIParameters.class);
+	private void setJobParams(CIParameters ciParameters, SBuildType buildType) {
+		if (ciParameters != null) {
 			for (CIParameter param : ciParameters.getParameters()) {
 				String value;
 				if (TeamCityTestsToRunConverterBuilder.TESTS_TO_RUN_PARAMETER.equals(param.getName())) {
