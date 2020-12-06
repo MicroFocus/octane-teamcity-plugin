@@ -22,16 +22,18 @@ package com.hp.octane.plugins.jetbrains.teamcity;
 
 import com.hp.octane.integrations.OctaneConfiguration;
 import com.hp.octane.integrations.OctaneSDK;
+import com.hp.octane.integrations.services.configurationparameters.OctaneRootsCacheAllowedParameter;
+import com.hp.octane.integrations.services.configurationparameters.factory.ConfigurationParameterFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.actions.ConfigurationActionsController;
 import com.hp.octane.plugins.jetbrains.teamcity.actions.GenericOctaneActionsController;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigMultiSharedSpaceStructure;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigStructure;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHolder;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationService;
+import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import jetbrains.buildServer.serverSide.SBuildServer;
 import jetbrains.buildServer.serverSide.ServerExtension;
 import jetbrains.buildServer.web.openapi.WebControllerManager;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -44,7 +46,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class OctaneTeamCityPlugin implements ServerExtension {
-    private static final Logger logger = LogManager.getLogger(OctaneTeamCityPlugin.class);
+    private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(OctaneTeamCityPlugin.class);
     public static final String PLUGIN_NAME = OctaneTeamCityPlugin.class.getSimpleName().toLowerCase();
 
 
@@ -91,6 +93,7 @@ public class OctaneTeamCityPlugin implements ServerExtension {
                octaneConfiguration.setClient(config.getUsername());
                octaneConfiguration.setSecret(config.getSecretPassword());
                try{
+                   ConfigurationParameterFactory.addParameter(octaneConfiguration, OctaneRootsCacheAllowedParameter.KEY, "false");
                    OctaneSDK.addClient(octaneConfiguration, TeamCityPluginServicesImpl.class);
                    holder.getOctaneConfigurations().put(config.getIdentity(), octaneConfiguration);
                } catch (Exception e) {

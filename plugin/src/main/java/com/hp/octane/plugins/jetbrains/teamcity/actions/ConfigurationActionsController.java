@@ -22,14 +22,16 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.hp.octane.integrations.OctaneConfiguration;
 import com.hp.octane.integrations.OctaneSDK;
+import com.hp.octane.integrations.services.configurationparameters.OctaneRootsCacheAllowedParameter;
+import com.hp.octane.integrations.services.configurationparameters.factory.ConfigurationParameterFactory;
 import com.hp.octane.integrations.utils.OctaneUrlParser;
 import com.hp.octane.plugins.jetbrains.teamcity.TeamCityPluginServicesImpl;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigMultiSharedSpaceStructure;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigStructure;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHolder;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationService;
+import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.Utils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.ModelAndView;
@@ -48,7 +50,7 @@ import static com.hp.octane.plugins.jetbrains.teamcity.utils.Utils.buildResponse
  */
 
 public class ConfigurationActionsController implements Controller {
-	private static final Logger logger = LogManager.getLogger(ConfigurationActionsController.class);
+	private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(ConfigurationActionsController.class);
 
 	@Autowired
 	private TCConfigurationService configurationService;
@@ -170,6 +172,7 @@ public class ConfigurationActionsController implements Controller {
 				octaneConfiguration.setSecret(newConf.getSecretPassword());
 
 				try {
+					ConfigurationParameterFactory.addParameter(octaneConfiguration, OctaneRootsCacheAllowedParameter.KEY, "false");
 					OctaneSDK.addClient(octaneConfiguration, TeamCityPluginServicesImpl.class);
 				} catch (Exception e) {
 					return buildResponseStringEmptyConfigsWithError(e.getMessage());

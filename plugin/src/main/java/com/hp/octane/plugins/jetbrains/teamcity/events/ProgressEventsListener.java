@@ -26,10 +26,10 @@ import com.hp.octane.integrations.dto.events.PhaseType;
 import com.hp.octane.plugins.jetbrains.teamcity.OctaneTeamCityPlugin;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.ModelCommonFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.TCPluginParametersFactory;
+import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import jetbrains.buildServer.serverSide.*;
 import jetbrains.buildServer.serverSide.parameters.ParameterFactory;
 import jetbrains.buildServer.util.EventDispatcher;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  */
 
 public class ProgressEventsListener extends BuildServerAdapter implements ParametersPreprocessor {
-	private static final Logger logger = LogManager.getLogger(ProgressEventsListener.class);
+	private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(ProgressEventsListener.class);
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
 	private static final String TRIGGER_BUILD_TYPE_KEY = "buildTypeId";
 

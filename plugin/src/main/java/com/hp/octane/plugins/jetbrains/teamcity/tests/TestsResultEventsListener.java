@@ -17,13 +17,7 @@
 package com.hp.octane.plugins.jetbrains.teamcity.tests;
 
 import com.hp.octane.integrations.OctaneSDK;
-import jetbrains.buildServer.serverSide.BuildServerAdapter;
-import jetbrains.buildServer.serverSide.BuildStatistics;
-import jetbrains.buildServer.serverSide.BuildStatisticsOptions;
-import jetbrains.buildServer.serverSide.SBuildServer;
-import jetbrains.buildServer.serverSide.SRunningBuild;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import jetbrains.buildServer.serverSide.*;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -31,8 +25,6 @@ import org.jetbrains.annotations.NotNull;
  */
 
 public class TestsResultEventsListener extends BuildServerAdapter {
-	private static final Logger logger = LogManager.getLogger(TestsResultEventsListener.class);
-
 	private TestsResultEventsListener(SBuildServer server) {
 		server.addListener(this);
 	}

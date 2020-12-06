@@ -20,11 +20,11 @@ import com.hp.octane.integrations.OctaneConfiguration;
 import com.hp.octane.integrations.OctaneSDK;
 import com.hp.octane.integrations.exceptions.OctaneConnectivityException;
 import com.hp.octane.plugins.jetbrains.teamcity.TeamCityPluginServicesImpl;
+import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import jetbrains.buildServer.serverSide.SBuildServer;
 import jetbrains.buildServer.users.SUser;
 import jetbrains.buildServer.users.UserModel;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.w3c.dom.Document;
@@ -40,9 +40,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hp.octane.plugins.jetbrains.teamcity.utils.Utils.buildResponseStringEmptyConfigs;
-import static com.hp.octane.plugins.jetbrains.teamcity.utils.Utils.buildResponseStringEmptyConfigsWithError;
-import static com.hp.octane.plugins.jetbrains.teamcity.utils.Utils.setMessageFont;
+import static com.hp.octane.plugins.jetbrains.teamcity.utils.Utils.*;
 import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4;
 
 /**
@@ -51,7 +49,8 @@ import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4;
  */
 
 public class TCConfigurationService {
-	private static final Logger logger = LogManager.getLogger(TCConfigurationService.class);
+	private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(TCConfigurationService.class);
+
 	private static final String CONFIG_FILE = "octane-config.xml";
 	private static final String OLD_ROOT_ELEMENT = "octane-config";
 	@Autowired

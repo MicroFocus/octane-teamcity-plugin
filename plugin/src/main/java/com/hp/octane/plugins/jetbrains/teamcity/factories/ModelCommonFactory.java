@@ -21,11 +21,13 @@ import com.hp.octane.integrations.dto.general.CIJobsList;
 import com.hp.octane.integrations.dto.pipelines.PipelineNode;
 import com.hp.octane.integrations.dto.pipelines.PipelinePhase;
 import com.hp.octane.integrations.dto.snapshots.CIBuildResult;
+import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import jetbrains.buildServer.messages.Status;
 import jetbrains.buildServer.serverSide.ProjectManager;
 import jetbrains.buildServer.serverSide.SBuildType;
 import jetbrains.buildServer.serverSide.SProject;
 import jetbrains.buildServer.serverSide.dependency.Dependency;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -38,6 +40,8 @@ import java.util.List;
 
 public class ModelCommonFactory {
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
+	private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(ModelCommonFactory.class);
+
 
 	@Autowired
 	private TCPluginParametersFactory parametersFactory;
@@ -54,6 +58,7 @@ public class ModelCommonFactory {
 
 			List<SBuildType> buildTypes = project.getBuildTypes();
 			for (SBuildType buildType : buildTypes) {
+				logger.info("Fetching data for project: " + buildType.getName());
 				if (!ids.contains(buildType.getInternalId())) {
 					ids.add(buildType.getInternalId());
 					buildConf = dtoFactory.newDTO(PipelineNode.class)
