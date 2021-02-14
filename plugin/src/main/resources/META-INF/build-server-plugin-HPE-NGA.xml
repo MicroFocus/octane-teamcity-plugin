@@ -46,7 +46,4 @@
     <bean id="progressEventsListener" name="progressEventsListener"
           class="com.hp.octane.plugins.jetbrains.teamcity.events.ProgressEventsListener"/>
 
-    <!-- TESTS -->
-    <bean id="testsResultEventsListener" name="testsResultEventsListener"
-          class="com.hp.octane.plugins.jetbrains.teamcity.tests.TestsResultEventsListener"/>
 </beans>

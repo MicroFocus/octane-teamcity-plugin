@@ -137,6 +137,8 @@ public class ProgressEventsListener extends BuildServerAdapter implements Parame
 	public void buildFinished(@NotNull SRunningBuild build) {
 		TriggeredBy triggeredBy = build.getTriggeredBy();
 		List<CIEventCause> causes = new ArrayList<>();
+		BuildStatistics stats = build.getBuildStatistics(new BuildStatisticsOptions());
+		boolean hasTests = stats.getAllTestRunCount() > 0;
 
 		updateBuildTriggerCause(triggeredBy, causes);
 
@@ -151,8 +153,14 @@ public class ProgressEventsListener extends BuildServerAdapter implements Parame
 				.setStartTime(build.getStartDate().getTime())
 				.setEstimatedDuration(build.getDurationEstimate() * 1000)
 				.setDuration(build.getDuration() * 1000)
-				.setResult(modelCommonFactory.resultFromNativeStatus(build.getBuildStatus(), build.isInterrupted()));
+				.setResult(modelCommonFactory.resultFromNativeStatus(build.getBuildStatus(), build.isInterrupted()))
+				.setTestResultExpected(hasTests);
 		OctaneSDK.getClients().forEach(client -> client.getEventsService().publishEvent(event));
+
+		if(hasTests) {
+			OctaneSDK.getClients().forEach(client -> client.getTestsService().enqueuePushTestsResult(build.getBuildTypeExternalId(),
+					String.valueOf(build.getBuildId()), build.getBuildTypeExternalId()));
+		}
 	}
 
 	private void updateBuildTriggerCause(TriggeredBy triggeredBy, List<CIEventCause> causes) {
