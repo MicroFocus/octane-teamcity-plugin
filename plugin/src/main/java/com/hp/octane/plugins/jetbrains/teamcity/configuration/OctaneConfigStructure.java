@@ -16,33 +16,33 @@
 
 package com.hp.octane.plugins.jetbrains.teamcity.configuration;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import jetbrains.buildServer.serverSide.crypt.EncryptUtil;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
 
-@XmlRootElement(name = "octane-config")
-@XmlAccessorType(XmlAccessType.NONE)
+
+@JacksonXmlRootElement(localName = "octane-config")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class OctaneConfigStructure {
 
-	@XmlElement
+	@JacksonXmlProperty(localName ="identity")
 	private String identity;
-	@XmlElement
+	@JacksonXmlProperty(localName ="identityFrom" )
 	private String identityFrom;
-	@XmlElement
+	@JacksonXmlProperty(localName ="uiLocation" )
 	private String uiLocation;
-	@XmlElement(name = "api-key")
+	@JacksonXmlProperty(localName ="api-key" )
 	private String username;
-	@XmlElement(name = "secret")
+	@JacksonXmlProperty(localName ="secret" )
 	private String secretPassword;
-	@XmlElement
+	@JacksonXmlProperty(localName ="impersonatedUser" )
 	private String impersonatedUser;
-	@XmlElement
+	@JacksonXmlProperty(localName ="location" )
 	private String location;
-	@XmlElement
+	@JacksonXmlProperty(localName ="sharedSpace" )
 	private String sharedSpace;
 
 	public String getIdentity() {
@@ -59,10 +59,6 @@ public class OctaneConfigStructure {
 
 	public void setIdentityFrom(String identityFrom) {
 		this.identityFrom = identityFrom;
-	}
-
-	public long getIdentityFromAsLong() {
-		return Long.valueOf(identityFrom);
 	}
 
 	public String getUiLocation() {

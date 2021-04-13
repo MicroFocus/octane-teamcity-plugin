@@ -16,6 +16,8 @@
 
 package com.hp.octane.plugins.jetbrains.teamcity.configuration;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.hp.octane.integrations.OctaneConfiguration;
 import com.hp.octane.integrations.OctaneSDK;
 import com.hp.octane.integrations.exceptions.OctaneConnectivityException;
@@ -27,16 +29,8 @@ import jetbrains.buildServer.users.UserModel;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +46,7 @@ public class TCConfigurationService {
 	private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(TCConfigurationService.class);
 
 	private static final String CONFIG_FILE = "octane-config.xml";
-	private static final String OLD_ROOT_ELEMENT = "octane-config";
+
 	@Autowired
 	private SBuildServer buildServer;
 	@Autowired
@@ -94,40 +88,22 @@ public class TCConfigurationService {
 	public List<OctaneConfigStructure> readConfig() {
 		OctaneConfigMultiSharedSpaceStructure multiSharedSpaceStructure;
 		try {
-			JAXBContext context = JAXBContext.newInstance(OctaneConfigMultiSharedSpaceStructure.class);
-			Unmarshaller un = context.createUnmarshaller();
-			multiSharedSpaceStructure = (OctaneConfigMultiSharedSpaceStructure) un.unmarshal(getConfigurationResource());
-		} catch (JAXBException jaxbe) {
-			logger.error("failed to read Octane configuration", jaxbe);
+			XmlMapper xmlMapper = new XmlMapper();
+			multiSharedSpaceStructure = xmlMapper.readValue(getConfigurationResource(), OctaneConfigMultiSharedSpaceStructure.class);
+		} catch (IOException e) {
+			logger.error("failed to read Octane configuration", e);
 			return null;
 		}
 		return multiSharedSpaceStructure.getMultiConfigStructure();
 	}
 
-	public void upgradeConfig() {
-		OctaneConfigStructure result;
-		try {
-			JAXBContext context = JAXBContext.newInstance(OctaneConfigStructure.class);
-			Unmarshaller un = context.createUnmarshaller();
-			result = (OctaneConfigStructure) un.unmarshal(getConfigurationResource());
-		} catch (JAXBException jaxbe) {
-			logger.error("failed to read Octane configuration", jaxbe);
-			return;
-		}
-		List<OctaneConfigStructure> multiSharedSpaceStructure = new ArrayList<>();
-		multiSharedSpaceStructure.add(result);
-		OctaneConfigMultiSharedSpaceStructure configs = new OctaneConfigMultiSharedSpaceStructure();
-		configs.setMultiConfigStructure(multiSharedSpaceStructure);
-		saveConfig(configs);
-		logger.info("ALM Octane CI Plugin configuration was upgraded");
-	}
-
 	public String saveConfig(OctaneConfigMultiSharedSpaceStructure configs) {
 		try {
-			JAXBContext context = JAXBContext.newInstance(OctaneConfigMultiSharedSpaceStructure.class);
-			Marshaller m = context.createMarshaller();
-			m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-			m.marshal(configs, getConfigurationResource());
+			XmlMapper xmlMapper = new XmlMapper();
+			xmlMapper.enable(SerializationFeature.INDENT_OUTPUT);
+			xmlMapper.writeValue(getConfigurationResource(),configs);
+
+			//handle response
 			int index = 0;
 			String result = "{\"configs\":{";
 			for (OctaneConfigStructure conf : configs.getMultiConfigStructure()) {
@@ -137,8 +113,8 @@ public class TCConfigurationService {
 			result = configs.getMultiConfigStructure().isEmpty() ? result : result.substring(0, result.length() - 1);
 			result += "}, \"status\":\"" + escapeHtml4(setMessageFont("Configurations updated successfully", "green"))+ "\"}";
 			return result;
-		} catch (JAXBException jaxbe) {
-			logger.error("failed to save Octane configurations", jaxbe);
+		} catch (IOException e) {
+			logger.error("failed to save Octane configurations", e);
 			return buildResponseStringEmptyConfigsWithError("failed to save Octane configurations");
 		} catch (IllegalStateException e) {
 			logger.error("failed to publish Octane configurations", e);
@@ -153,21 +129,5 @@ public class TCConfigurationService {
 	public boolean isEmptyConfig() {
 		File file = getConfigurationResource();
 		return !file.exists() || file.length() == 0;
-	}
-
-	public boolean isOldConfiguration() throws Exception {
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		try {
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document document = builder.parse(getConfigurationResource());
-			Element rootElement = document.getDocumentElement();
-			if (OLD_ROOT_ELEMENT.equalsIgnoreCase(rootElement.getTagName())) {
-				return true;
-			}
-			return false;
-		} catch (Exception e) {
-			logger.error(e.getMessage());
-			throw e;
-		}
 	}
 }
