@@ -28,14 +28,15 @@ import com.hp.octane.integrations.dto.parameters.CIParameters;
 import com.hp.octane.integrations.dto.pipelines.PipelineNode;
 import com.hp.octane.integrations.dto.tests.*;
 import com.hp.octane.integrations.exceptions.PermissionException;
+import com.hp.octane.integrations.testresults.GherkinUtils;
 import com.hp.octane.integrations.utils.CIPluginSDKUtils;
+import com.hp.octane.integrations.utils.SdkConstants;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigStructure;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHolder;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.ModelCommonFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.testrunner.TeamCityTestsToRunConverterBuilder;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SpringContextBridge;
-import jetbrains.buildServer.Build;
 import jetbrains.buildServer.serverSide.*;
 import jetbrains.buildServer.serverSide.auth.AccessDeniedException;
 import jetbrains.buildServer.serverSide.impl.RunningBuildState;
@@ -48,7 +49,9 @@ import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.logging.log4j.Logger;
 
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
@@ -212,28 +215,66 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 
 	@Override
 	public InputStream getTestsResult(String jobId, String buildId) {
-		TestsResult result = null;
 		if (jobId != null && buildId != null) {
 			SBuildType buildType = findBuildType(jobId);
 			if (buildType != null) {
-				Build build = buildServerEx.findBuildInstanceById(Long.valueOf(buildId));
+				SBuild build = buildServerEx.findBuildInstanceById(Long.valueOf(buildId));
 				if (build instanceof SFinishedBuild) {
-					List<TestRun> tests = createTestList((SFinishedBuild) build);
-					if (tests != null && !tests.isEmpty()) {
-						BuildContext buildContext = dtoFactory.newDTO(BuildContext.class)
-								.setJobId(build.getBuildTypeExternalId())
-								.setJobName(build.getBuildTypeName())
-								.setBuildId(String.valueOf(build.getBuildId()))
-								.setBuildName(build.getBuildNumber())
-								.setServerId(getInstanceId());
-						result = dtoFactory.newDTO(TestsResult.class)
-								.setBuildContext(buildContext)
-								.setTestRuns(tests);
+					InputStream is = tryHandleExternalTestResults(buildType,build,jobId,buildId);
+					if(is!=null){
+						return is;
+					}
+					else {
+						List<TestRun> tests = createTestList((SFinishedBuild) build);
+						if (tests != null && !tests.isEmpty()) {
+							BuildContext buildContext = dtoFactory.newDTO(BuildContext.class)
+									.setJobId(build.getBuildTypeExternalId())
+									.setJobName(build.getBuildTypeName())
+									.setBuildId(String.valueOf(build.getBuildId()))
+									.setBuildName(build.getBuildNumber())
+									.setServerId(getInstanceId());
+							TestsResult result = dtoFactory.newDTO(TestsResult.class)
+									.setBuildContext(buildContext)
+									.setTestRuns(tests);
+							return dtoFactory.dtoToXmlStream(result);
+						}
 					}
 				}
 			}
 		}
-		return result == null ? null : dtoFactory.dtoToXmlStream(result);
+		return null;
+	}
+
+	private InputStream tryHandleExternalTestResults(SBuildType buildType, SBuild build, String jobId, String buildId) {
+		try {
+			String folder = buildType.getConfigParameters().get("gherkin_artifact_folder_for_octane");
+			if (folder != null) {
+				File gherkinResults = new File(build.getArtifactsDirectory(), folder);
+				if (build.getArtifactsDirectory().exists() && gherkinResults.exists()) {
+					List<File> files = Arrays.asList(gherkinResults.listFiles());
+					Optional<File> mqmFileOpt = files.stream().filter(f -> f.getName().equals(SdkConstants.General.MQM_TESTS_FILE_NAME)).findFirst();
+
+					File mqmFilePath;
+					if (mqmFileOpt.isPresent()) {
+						mqmFilePath = mqmFileOpt.get();
+					} else {
+						mqmFilePath = new File(gherkinResults, SdkConstants.General.MQM_TESTS_FILE_NAME);
+
+					}
+
+					GherkinUtils.aggregateGherkinFilesToMqmResultFile(files, mqmFilePath, jobId, buildId);
+					final InputStream targetStream = new DataInputStream(new FileInputStream(mqmFilePath));
+					return targetStream;
+				}
+			} else {
+				throw new IllegalArgumentException(String.format("No artifact folder %s is found ", folder));
+			}
+		} catch (Exception e) {
+			log.error("Failed to generate gherkin test result file : " + e.getMessage(), e);
+			throw new RuntimeException(e);
+
+		}
+		return null;
 	}
 
 	private SBuildType findBuildType(String jobId) {
