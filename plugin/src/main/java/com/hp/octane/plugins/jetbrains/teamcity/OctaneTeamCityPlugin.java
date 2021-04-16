@@ -67,13 +67,14 @@ public class OctaneTeamCityPlugin implements ServerExtension {
     private static String rootServerUrl = null;
     @PostConstruct
     private void initPlugin() throws Exception {
+        buildServer.registerExtension(ServerExtension.class, PLUGIN_NAME, this);
+
         logger.info("");
         logger.info("**********************************************************************");
         logger.info("********************STARTING TEAMCITY *********************************");
         logger.info("**********************************************************************");
         logger.info("CI SDK version " + OctaneSDK.SDK_VERSION);
 
-        buildServer.registerExtension(ServerExtension.class, PLUGIN_NAME, this);
         registerControllers();
         if (configurationService.isEmptyConfig()) {
             logger.info("ALM Octane CI Plugin configuration is empty");
@@ -127,7 +128,6 @@ public class OctaneTeamCityPlugin implements ServerExtension {
 
     private void registerControllers() {
         webControllerManager.registerController("/nga/**", genericController);
-        webControllerManager.registerController("/nga/log", genericController);
         webControllerManager.registerController("/octane-rest/**", configurationController);
     }
 

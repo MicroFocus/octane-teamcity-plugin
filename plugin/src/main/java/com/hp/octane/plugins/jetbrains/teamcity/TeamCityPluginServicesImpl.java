@@ -115,6 +115,10 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 
 	@Override
 	public  File getAllowedOctaneStorage() {
+		return getAllowedOctaneStorage(buildServerEx);
+	}
+
+	public static File getAllowedOctaneStorage(BuildServerEx buildServerEx){
 		return new File(buildServerEx.getServerRootPath(), "logs");
 	}
 
