@@ -18,6 +18,9 @@ package com.hp.octane.plugins.jetbrains.teamcity.actions;
 
 import com.hp.octane.plugins.jetbrains.teamcity.TeamCityPluginServicesImpl;
 import jetbrains.buildServer.serverSide.BuildServerEx;
+import jetbrains.buildServer.serverSide.auth.Permission;
+import jetbrains.buildServer.users.SUser;
+import jetbrains.buildServer.web.util.SessionUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -62,5 +65,11 @@ public class GenericOctaneActionsController implements Controller {
             res.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
         return null;
+    }
+
+    private boolean hasPermission(HttpServletRequest req, Permission permission) {
+        //if (!hasPerrmission(req, Permission.CHANGE_SERVER_SETTINGS)) {
+        SUser user = SessionUser.getUser(req);
+        return user != null && user.isPermissionGrantedGlobally(permission);
     }
 }

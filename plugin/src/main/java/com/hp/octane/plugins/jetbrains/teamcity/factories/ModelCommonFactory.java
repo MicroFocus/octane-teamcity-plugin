@@ -40,7 +40,7 @@ import java.util.List;
 
 public class ModelCommonFactory {
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
-	private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(ModelCommonFactory.class);
+	private static final Logger logger = SDKBasedLoggerProvider.getLogger(ModelCommonFactory.class);
 
 
 	@Autowired

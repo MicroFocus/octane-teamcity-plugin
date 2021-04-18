@@ -19,10 +19,10 @@ package com.hp.octane.plugins.jetbrains.teamcity.events;
 import com.hp.octane.integrations.dto.DTOFactory;
 import com.hp.octane.integrations.dto.scm.*;
 import com.hp.octane.integrations.dto.scm.impl.SCMChangeType;
+import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import jetbrains.buildServer.serverSide.SRunningBuild;
 import jetbrains.buildServer.vcs.*;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ import java.util.List;
 
 class ScmUtils {
 
-	private static final Logger logger = LogManager.getLogger(ScmUtils.class);
+	private static final Logger logger = SDKBasedLoggerProvider.getLogger(ScmUtils.class);
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
 
 	static SCMData getScmData(@NotNull SRunningBuild build) {

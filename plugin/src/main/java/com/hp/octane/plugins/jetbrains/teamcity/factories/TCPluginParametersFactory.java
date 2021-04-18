@@ -32,7 +32,7 @@ import java.util.*;
 
 public class TCPluginParametersFactory {
     private static final DTOFactory dtoFactory = DTOFactory.getInstance();
-    private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(TCPluginParametersFactory.class);
+    private static final Logger logger = SDKBasedLoggerProvider.getLogger(TCPluginParametersFactory.class);
 
     public List<CIParameter> obtainFromBuildType(SBuildType buildType) {
         List<CIParameter> result = new LinkedList<>();

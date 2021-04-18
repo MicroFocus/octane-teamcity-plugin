@@ -22,6 +22,7 @@ package com.hp.octane.plugins.jetbrains.teamcity;
 
 import com.hp.octane.integrations.OctaneConfiguration;
 import com.hp.octane.integrations.OctaneSDK;
+import com.hp.octane.integrations.dto.DTOFactory;
 import com.hp.octane.integrations.services.configurationparameters.OctaneRootsCacheAllowedParameter;
 import com.hp.octane.integrations.services.configurationparameters.factory.ConfigurationParameterFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.actions.ConfigurationActionsController;
@@ -31,6 +32,7 @@ import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigStruct
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHolder;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationService;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
+import jetbrains.buildServer.serverSide.BuildServerEx;
 import jetbrains.buildServer.serverSide.SBuildServer;
 import jetbrains.buildServer.serverSide.ServerExtension;
 import jetbrains.buildServer.web.openapi.WebControllerManager;
@@ -39,6 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.xml.stream.XMLOutputFactory;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -46,7 +49,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class OctaneTeamCityPlugin implements ServerExtension {
-    private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(OctaneTeamCityPlugin.class);
+    private static final Logger logger = SDKBasedLoggerProvider.getLogger(OctaneTeamCityPlugin.class);
     public static final String PLUGIN_NAME = OctaneTeamCityPlugin.class.getSimpleName().toLowerCase();
 
 
@@ -63,11 +66,17 @@ public class OctaneTeamCityPlugin implements ServerExtension {
     private TCConfigurationHolder holder;
     @Autowired
     private SBuildServer buildServer;
+    @Autowired
+    BuildServerEx buildServerEx;
 
     private static String rootServerUrl = null;
     @PostConstruct
     private void initPlugin() throws Exception {
         buildServer.registerExtension(ServerExtension.class, PLUGIN_NAME, this);
+        SDKBasedLoggerProvider.configure(TeamCityPluginServicesImpl.getAllowedOctaneStorage(buildServerEx));
+
+        //remove prefix zdef from attribures , for example zdef-322307361:started="1618753398313"
+        DTOFactory.getInstance().getXMLOutputFactory().setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, false);
 
         logger.info("");
         logger.info("**********************************************************************");
@@ -90,9 +99,6 @@ public class OctaneTeamCityPlugin implements ServerExtension {
         holder.setConfigs(configs);
         ensureServerInstanceID();
         for (OctaneConfigStructure config : holder.getConfigs()) {
-               if (config.getLocation() == null || config.getLocation().isEmpty()) {
-
-               }
                OctaneConfiguration octaneConfiguration = OctaneConfiguration.create(config.getIdentity(), config.getLocation(),
                        config.getSharedSpace());
                octaneConfiguration.setClient(config.getUsername());
@@ -104,7 +110,6 @@ public class OctaneTeamCityPlugin implements ServerExtension {
                } catch (Exception e) {
                    logger.error(e.getMessage(),e);
                }
-
         }
         logger.info("ALM Octane CI Plugin initialized; current configurations: " + holder.getConfigs().stream().map(Object::toString).collect(Collectors.joining(",")));
     }

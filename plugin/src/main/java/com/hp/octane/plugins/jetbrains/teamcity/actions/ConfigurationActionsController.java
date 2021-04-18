@@ -50,7 +50,7 @@ import static com.hp.octane.plugins.jetbrains.teamcity.utils.Utils.buildResponse
  */
 
 public class ConfigurationActionsController implements Controller {
-	private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(ConfigurationActionsController.class);
+	private static final Logger logger = SDKBasedLoggerProvider.getLogger(ConfigurationActionsController.class);
 
 	@Autowired
 	private TCConfigurationService configurationService;

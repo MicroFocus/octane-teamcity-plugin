@@ -62,7 +62,7 @@ import java.util.*;
  */
 
 public class TeamCityPluginServicesImpl extends CIPluginServices {
-	private static final Logger log = SDKBasedLoggerProvider.getInstance().getLogger(TeamCityPluginServicesImpl.class);
+	private static final Logger log = SDKBasedLoggerProvider.getLogger(TeamCityPluginServicesImpl.class);
 
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
 	private final int MAX_SIZE = 255;
@@ -119,7 +119,8 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 	}
 
 	public static File getAllowedOctaneStorage(BuildServerEx buildServerEx){
-		return new File(buildServerEx.getServerRootPath(), "logs");
+		//return new File(buildServerEx.getServerRootPath(), "logs");
+		return buildServerEx.getProjectManager().getProjectsDirectory().getParentFile();
 	}
 
 	@Override
@@ -225,7 +226,7 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 				SBuild build = buildServerEx.findBuildInstanceById(Long.valueOf(buildId));
 				if (build instanceof SFinishedBuild) {
 					InputStream is = tryHandleExternalTestResults(buildType,build,jobId,buildId);
-					if(is!=null){
+					if (is != null) {
 						return is;
 					}
 					else {
@@ -269,9 +270,9 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 					GherkinUtils.aggregateGherkinFilesToMqmResultFile(files, mqmFilePath, jobId, buildId);
 					final InputStream targetStream = new DataInputStream(new FileInputStream(mqmFilePath));
 					return targetStream;
+				} else {
+					throw new IllegalArgumentException(String.format("No artifact folder %s is found ", folder));
 				}
-			} else {
-				throw new IllegalArgumentException(String.format("No artifact folder %s is found ", folder));
 			}
 		} catch (Exception e) {
 			log.error("Failed to generate gherkin test result file : " + e.getMessage(), e);

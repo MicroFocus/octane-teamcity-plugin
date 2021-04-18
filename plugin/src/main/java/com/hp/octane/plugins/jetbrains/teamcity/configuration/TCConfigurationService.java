@@ -23,10 +23,12 @@ import com.hp.octane.integrations.OctaneSDK;
 import com.hp.octane.integrations.exceptions.OctaneConnectivityException;
 import com.hp.octane.plugins.jetbrains.teamcity.TeamCityPluginServicesImpl;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
+import jetbrains.buildServer.serverSide.BuildServerEx;
 import jetbrains.buildServer.serverSide.SBuildServer;
 import jetbrains.buildServer.users.SUser;
 import jetbrains.buildServer.users.UserModel;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.io.File;
@@ -43,7 +45,7 @@ import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4;
  */
 
 public class TCConfigurationService {
-	private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(TCConfigurationService.class);
+	private static final Logger logger = SDKBasedLoggerProvider.getLogger(TCConfigurationService.class);
 
 	private static final String CONFIG_FILE = "octane-config.xml";
 
@@ -51,6 +53,8 @@ public class TCConfigurationService {
 	private SBuildServer buildServer;
 	@Autowired
 	private PluginDescriptor pluginDescriptor;
+	@Autowired
+	private BuildServerEx buildServerEx;
 
 	public String checkConfiguration(OctaneConfiguration octaneConfiguration, String impersonatedUser) {
 		String resultMessage = setMessageFont("Connection succeeded", "green");
@@ -123,11 +127,28 @@ public class TCConfigurationService {
 	}
 
 	private File getConfigurationResource() {
-		return new File(buildServer.getServerRootPath() + pluginDescriptor.getPluginResourcesPath(CONFIG_FILE));
+		File parentFolder = new File(TeamCityPluginServicesImpl.getAllowedOctaneStorage(buildServerEx), "nga");
+		parentFolder.mkdirs();
+		return new File(parentFolder, CONFIG_FILE);
 	}
 
 	public boolean isEmptyConfig() {
-		File file = getConfigurationResource();
-		return !file.exists() || file.length() == 0;
+		File configFile = getConfigurationResource();
+
+		//copy configuration to new location in teamCityHome
+		if (!configFile.exists()) {
+			File oldConfigFile = new File(buildServer.getServerRootPath() + pluginDescriptor.getPluginResourcesPath(CONFIG_FILE));
+			if (oldConfigFile.exists()) {
+				try {
+					FileUtils.copyFile(oldConfigFile, configFile);
+					logger.info(String.format("Octane configuration copied successfully from %s to new location %s",
+							oldConfigFile.getAbsolutePath(), configFile.getAbsolutePath()));
+				} catch (IOException e) {
+					logger.error(String.format("*****  Failed to copy octane configuration from %s to new location %s : %s",
+							oldConfigFile.getAbsolutePath(), configFile.getAbsolutePath(), e.getMessage()), e);
+				}
+			}
+		}
+		return !configFile.exists() || configFile.length() == 0;
 	}
 }

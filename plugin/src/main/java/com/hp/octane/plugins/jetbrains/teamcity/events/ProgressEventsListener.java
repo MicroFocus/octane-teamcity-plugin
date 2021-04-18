@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  */
 
 public class ProgressEventsListener extends BuildServerAdapter implements ParametersPreprocessor {
-	private static final Logger logger = SDKBasedLoggerProvider.getInstance().getLogger(ProgressEventsListener.class);
+	private static final Logger logger = SDKBasedLoggerProvider.getLogger(ProgressEventsListener.class);
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
 	private static final String TRIGGER_BUILD_TYPE_KEY = "buildTypeId";
 
