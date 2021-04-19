@@ -18,9 +18,6 @@ package com.hp.octane.plugins.jetbrains.teamcity.actions;
 
 import com.hp.octane.plugins.jetbrains.teamcity.TeamCityPluginServicesImpl;
 import jetbrains.buildServer.serverSide.BuildServerEx;
-import jetbrains.buildServer.serverSide.auth.Permission;
-import jetbrains.buildServer.users.SUser;
-import jetbrains.buildServer.web.util.SessionUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -41,18 +38,34 @@ public class GenericOctaneActionsController implements Controller {
     @Autowired
     private BuildServerEx buildServerEx;
 
+    /**
+     * Support url : http://localhost:8093/nga/logs/?page=1
+     * @param req
+     * @param res
+     * @return
+     * @throws Exception
+     */
     @Override
     public ModelAndView handleRequest(HttpServletRequest req, HttpServletResponse res) throws Exception {
         boolean handled = false;
         if ("get".equalsIgnoreCase(req.getMethod())) {
             if (req.getRequestURI().equalsIgnoreCase("/nga/logs/")) {
                 String name = "nga";
-                Integer id = null;
+                String pageStr= req.getParameter("page");
+                Integer pageId = null;
+                if (pageStr != null) {
+                    try {
+                        pageId = Integer.parseInt(pageStr);
+                    } catch (Exception e) {
+                        //do nothing
+                    }
+                }
+
                 java.nio.file.Path path = Paths.get(
                         TeamCityPluginServicesImpl.getAllowedOctaneStorage(buildServerEx).getAbsolutePath(),
                         "nga",
                         "logs",
-                        id == null ? name + ".log" : String.format("%s-%s.log", name, id));
+                        pageId == null ? name + ".log" : String.format("%s-%s.log", name, pageId));
                 if (path.toFile().exists()) {
                     String returnStr = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
                     PrintWriter writer = res.getWriter();
@@ -65,11 +78,5 @@ public class GenericOctaneActionsController implements Controller {
             res.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
         return null;
-    }
-
-    private boolean hasPermission(HttpServletRequest req, Permission permission) {
-        //if (!hasPerrmission(req, Permission.CHANGE_SERVER_SETTINGS)) {
-        SUser user = SessionUser.getUser(req);
-        return user != null && user.isPermissionGrantedGlobally(permission);
     }
 }

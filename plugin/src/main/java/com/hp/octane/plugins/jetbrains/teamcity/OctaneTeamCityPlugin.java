@@ -76,7 +76,7 @@ public class OctaneTeamCityPlugin implements ServerExtension {
         SDKBasedLoggerProvider.configure(TeamCityPluginServicesImpl.getAllowedOctaneStorage(buildServerEx));
 
         //remove prefix zdef from attribures , for example zdef-322307361:started="1618753398313"
-        DTOFactory.getInstance().getXMLOutputFactory().setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, false);
+        DTOFactory.getInstance().getXMLMapper().getFactory().getXMLOutputFactory().setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, false);
 
         logger.info("");
         logger.info("**********************************************************************");
@@ -102,7 +102,7 @@ public class OctaneTeamCityPlugin implements ServerExtension {
                OctaneConfiguration octaneConfiguration = OctaneConfiguration.create(config.getIdentity(), config.getLocation(),
                        config.getSharedSpace());
                octaneConfiguration.setClient(config.getUsername());
-               octaneConfiguration.setSecret(config.getSecretPassword());
+               octaneConfiguration.setSecret(config.unscramblePassword());
                try{
                    ConfigurationParameterFactory.addParameter(octaneConfiguration, OctaneRootsCacheAllowedParameter.KEY, "false");
                    OctaneSDK.addClient(octaneConfiguration, TeamCityPluginServicesImpl.class);

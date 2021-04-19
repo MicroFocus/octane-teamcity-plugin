@@ -16,10 +16,10 @@
 
 package com.hp.octane.plugins.jetbrains.teamcity.configuration;
 
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.hp.octane.integrations.OctaneConfiguration;
 import com.hp.octane.integrations.OctaneSDK;
+import com.hp.octane.integrations.dto.DTOFactory;
 import com.hp.octane.integrations.exceptions.OctaneConnectivityException;
 import com.hp.octane.plugins.jetbrains.teamcity.TeamCityPluginServicesImpl;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
@@ -57,7 +57,8 @@ public class TCConfigurationService {
 	private BuildServerEx buildServerEx;
 
 	public String checkConfiguration(OctaneConfiguration octaneConfiguration, String impersonatedUser) {
-		String resultMessage = setMessageFont("Connection succeeded", "green");
+
+		String resultMessage = setMessageFont("Connection succeeded for " + octaneConfiguration.getLocationForLog(), "green");
 
 		try {
 			OctaneSDK.testOctaneConfigurationAndFetchAvailableWorkspaces(octaneConfiguration.getUrl(),
@@ -92,7 +93,7 @@ public class TCConfigurationService {
 	public List<OctaneConfigStructure> readConfig() {
 		OctaneConfigMultiSharedSpaceStructure multiSharedSpaceStructure;
 		try {
-			XmlMapper xmlMapper = new XmlMapper();
+			XmlMapper xmlMapper = DTOFactory.getInstance().getXMLMapper();
 			multiSharedSpaceStructure = xmlMapper.readValue(getConfigurationResource(), OctaneConfigMultiSharedSpaceStructure.class);
 		} catch (IOException e) {
 			logger.error("failed to read Octane configuration", e);
@@ -103,9 +104,7 @@ public class TCConfigurationService {
 
 	public String saveConfig(OctaneConfigMultiSharedSpaceStructure configs) {
 		try {
-			XmlMapper xmlMapper = new XmlMapper();
-			xmlMapper.enable(SerializationFeature.INDENT_OUTPUT);
-			xmlMapper.writeValue(getConfigurationResource(),configs);
+			DTOFactory.getInstance().getXMLMapper().writeValue(getConfigurationResource(), configs);
 
 			//handle response
 			int index = 0;

@@ -26,7 +26,9 @@ import java.util.Objects;
 
 @JacksonXmlRootElement(localName = "octane-config")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OctaneConfigStructure {
+public class OctaneConfigStructure implements Cloneable {
+
+	public static String PASSWORD_REPLACER = "___PLAIN_PASSWORD___";
 
 	@JacksonXmlProperty(localName ="identity")
 	private String identity;
@@ -78,17 +80,25 @@ public class OctaneConfigStructure {
 	}
 
 	public String getSecretPassword() {
-		if(secretPassword != null && !secretPassword.isEmpty()) {
-			secretPassword = EncryptUtil.isScrambled(secretPassword) ? EncryptUtil.unscramble(secretPassword) : secretPassword;
-		}
 		return secretPassword;
 	}
 
-	public void setSecretPassword(String secretPassword) {
-		if(secretPassword != null && !secretPassword.isEmpty()) {
-			secretPassword = EncryptUtil.isScrambled(secretPassword) ? secretPassword : EncryptUtil.scramble(secretPassword);
+	public String unscramblePassword() {
+		if (secretPassword != null && !secretPassword.isEmpty() && EncryptUtil.isScrambled(secretPassword)) {
+			return EncryptUtil.unscramble(secretPassword);
+		} else {
+			return secretPassword;
 		}
-		this.secretPassword = secretPassword;
+	}
+
+	public void setSecretPassword(String secretPassword) {
+		if (secretPassword == null || PASSWORD_REPLACER.equals(secretPassword)) {
+			this.secretPassword = secretPassword;
+		} else if (!EncryptUtil.isScrambled(secretPassword)) {
+			this.secretPassword = EncryptUtil.scramble(secretPassword);
+		} else {
+			this.secretPassword = secretPassword;
+		}
 	}
 
 	public String getLocation() {
@@ -114,7 +124,6 @@ public class OctaneConfigStructure {
 				", identityFrom: " + identityFrom +
 				", uiLocation: " + uiLocation +
 				", apiKey: " + username +
-				", secret: *************" +
 				", location: " + location +
 				", impersonatedUser: " + impersonatedUser +
 				", sharedSpace: " + sharedSpace + '}';
@@ -143,5 +152,15 @@ public class OctaneConfigStructure {
 
 	public void setImpersonatedUser(String impersonatedUser) {
 		this.impersonatedUser = impersonatedUser;
+	}
+
+	public OctaneConfigStructure cloneWithoutSensitiveFields() {
+		try {
+			OctaneConfigStructure cloned = (OctaneConfigStructure)this.clone();
+			cloned.setSecretPassword(PASSWORD_REPLACER);
+			return cloned;
+		} catch (CloneNotSupportedException e) {
+			throw new RuntimeException("failed to cloneWithoutSensitiveFields");
+		}
 	}
 }

@@ -32,6 +32,7 @@ import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHol
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationService;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.Utils;
+import jetbrains.buildServer.serverSide.auth.Permission;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.ModelAndView;
@@ -42,6 +43,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.hp.octane.plugins.jetbrains.teamcity.utils.Utils.buildResponseStringEmptyConfigsWithError;
 
@@ -58,20 +60,28 @@ public class ConfigurationActionsController implements Controller {
 	private TCConfigurationHolder holder;
 
 	@Override
-	public ModelAndView handleRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+	public ModelAndView handleRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
+		if (!Utils.hasPermission(httpServletRequest, Permission.CHANGE_SERVER_SETTINGS)) {
+			httpServletResponse.sendError(HttpServletResponse.SC_FORBIDDEN);
+			return null;
+		}
+
 		String returnStr = "";
 		String action = httpServletRequest.getParameter("action");
 
-		if (!"post".equals(httpServletRequest.getMethod().toLowerCase()) && (action == null || action.isEmpty())) {
+		if (!"post".equalsIgnoreCase(httpServletRequest.getMethod()) && (action == null || action.isEmpty())) {
 			returnStr = reloadConfiguration();
 		} else {
 			try {
 				if ("test".equalsIgnoreCase(action)) {
 					String server = httpServletRequest.getParameter("server");
+					String instanceId = httpServletRequest.getParameter("instanceId");
 					try {
 						String apiKey = httpServletRequest.getParameter("username");
 						String secret = httpServletRequest.getParameter("password");
-
+						if(OctaneConfigStructure.PASSWORD_REPLACER.equals(secret) && holder.getOctaneConfigurations().containsKey(instanceId)){
+							secret = holder.getOctaneConfigurations().get(instanceId).getSecret();
+						}
 						OctaneConfiguration testedOctaneConfiguration = OctaneConfiguration.createWithUiLocation(UUID.randomUUID().toString(),
 								server);
 						testedOctaneConfiguration.setClient(apiKey);
@@ -89,6 +99,8 @@ public class ConfigurationActionsController implements Controller {
 							List.class, OctaneConfigStructure.class);
 					List<OctaneConfigStructure> configs = objectMapper.readValue(httpServletRequest.getInputStream(), collectionType);
 					handleDeletedConfigurations(configs);
+					restorePasswords(configs);
+
 					returnStr = updateConfiguration(configs);
 				}
 			} catch (Exception e) {
@@ -106,6 +118,14 @@ public class ConfigurationActionsController implements Controller {
 			logger.error("failed to write response", ioe);
 		}
 		return null;
+	}
+
+	private void restorePasswords(List<OctaneConfigStructure> configs) {
+		configs.forEach(c->{
+			if(OctaneConfigStructure.PASSWORD_REPLACER.equals(c.unscramblePassword()) && holder.getOctaneConfigurations().containsKey(c.getIdentity())){
+				c.setSecretPassword(holder.getOctaneConfigurations().get(c.getIdentity()).getSecret());
+			}
+		});
 	}
 
 	private void handleDeletedConfigurations(List<OctaneConfigStructure> newConfigs) {
@@ -143,9 +163,6 @@ public class ConfigurationActionsController implements Controller {
 	private String save() {
 		logger.info("Saving ALM Octane configurations...");
 		OctaneConfigMultiSharedSpaceStructure confs = new OctaneConfigMultiSharedSpaceStructure();
-		for (OctaneConfigStructure conf : holder.getConfigs()) {
-			conf.setSecretPassword(conf.getSecretPassword());
-		}
 		confs.setMultiConfigStructure(holder.getConfigs());
 		return configurationService.saveConfig(confs);
 	}
@@ -169,7 +186,7 @@ public class ConfigurationActionsController implements Controller {
 				OctaneConfiguration octaneConfiguration = OctaneConfiguration.create(newConf.getIdentity(), newConf.getLocation(),
 						octaneUrlParser.getSharedSpace());
 				octaneConfiguration.setClient(newConf.getUsername());
-				octaneConfiguration.setSecret(newConf.getSecretPassword());
+				octaneConfiguration.setSecret(newConf.unscramblePassword());
 
 				try {
 					ConfigurationParameterFactory.addParameter(octaneConfiguration, OctaneRootsCacheAllowedParameter.KEY, "false");
@@ -198,7 +215,7 @@ public class ConfigurationActionsController implements Controller {
 				result.setUiLocation(newConf.getUiLocation());
 				octaneConfiguration.setClient(newConf.getUsername());
 				result.setUsername(newConf.getUsername());
-				octaneConfiguration.setSecret(newConf.getSecretPassword());
+				octaneConfiguration.setSecret(newConf.unscramblePassword());
 				result.setSecretPassword(newConf.getSecretPassword());
 				result.setSharedSpace(sp);
 				result.setLocation(location);
@@ -235,7 +252,7 @@ public class ConfigurationActionsController implements Controller {
 	public String reloadConfiguration() {
 		try {
 			ObjectMapper mapper = new ObjectMapper();
-			List<OctaneConfigStructure> cfg = holder.getConfigs();
+			List<OctaneConfigStructure> cfg = holder.getConfigs().stream().map(c -> c.cloneWithoutSensitiveFields()).collect(Collectors.toList());
 			return mapper.writeValueAsString(cfg);
 		} catch (JsonProcessingException jpe) {
 			logger.error("failed to reload configuration", jpe);
