@@ -47,6 +47,7 @@ import jetbrains.buildServer.users.UserModel;
 import jetbrains.buildServer.util.ExceptionUtil;
 import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
 import java.io.DataInputStream;
@@ -312,13 +313,21 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 				testResultStatus = TestRunResult.PASSED;
 			}
 			TestName fqTestName = testRun.getTest().getName();
-			String pkgName = fqTestName.getPackageName();
-			String className = fqTestName.getClassName();
-			String testName = fqTestName.getTestMethodName();
-			if (pkgName.length() > MAX_SIZE ||
-					className.length() > MAX_SIZE ||
-					testName.length() > MAX_SIZE) {
-				log.error("Test [" + fqTestName.toString() + "] excluded from test results sending to ALM Octane. One of its parameters (package name, class name or test name) exceeds max size of 255 chars length.");
+			String pkgName, className, testName;
+			if (fqTestName.isJavaLikeTestName()) {
+				pkgName = fqTestName.getPackageName();
+				className = fqTestName.getClassName();
+				testName = fqTestName.getTestMethodName();
+			} else {
+				pkgName = StringUtils.strip(fqTestName.getSuite(), ": ");
+				className = null;
+				testName = fqTestName.getNameWithoutSuite();
+			}
+
+			if ((pkgName != null && pkgName.length() > MAX_SIZE) ||
+					(className != null && className.length() > MAX_SIZE) ||
+					(testName != null && testName.length() > MAX_SIZE)) {
+				log.error("Test [" + fqTestName + "] excluded from test results sending to ALM Octane. One of its parameters (package name, class name or test name) exceeds max size of 255 chars length.");
 			} else {
 				TestRun tr = dtoFactory.newDTO(TestRun.class)
 						.setModuleName("")
