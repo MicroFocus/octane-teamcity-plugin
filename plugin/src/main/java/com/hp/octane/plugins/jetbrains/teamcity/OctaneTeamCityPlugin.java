@@ -20,6 +20,8 @@ package com.hp.octane.plugins.jetbrains.teamcity;
  * Created by lazara on 23/12/2015.
  */
 
+import com.ctc.wstx.stax.WstxInputFactory;
+import com.ctc.wstx.stax.WstxOutputFactory;
 import com.hp.octane.integrations.OctaneConfiguration;
 import com.hp.octane.integrations.OctaneSDK;
 import com.hp.octane.integrations.dto.DTOFactory;
@@ -75,8 +77,8 @@ public class OctaneTeamCityPlugin implements ServerExtension {
         buildServer.registerExtension(ServerExtension.class, PLUGIN_NAME, this);
         SDKBasedLoggerProvider.configure(TeamCityPluginServicesImpl.getAllowedOctaneStorage(buildServerEx));
 
-        //remove prefix zdef from attribures , for example zdef-322307361:started="1618753398313"
-        DTOFactory.getInstance().getXMLMapper().getFactory().getXMLOutputFactory().setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, false);
+        //Common Xml mapper factory that used on recent Team city versions
+        DTOFactory.getInstance().initXmlMapper(new WstxInputFactory(),new WstxOutputFactory());
 
         logger.info("");
         logger.info("**********************************************************************");

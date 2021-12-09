@@ -268,7 +268,7 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 
 					}
 
-					GherkinUtils.aggregateGherkinFilesToMqmResultFile(files, mqmFilePath, jobId, buildId);
+					GherkinUtils.aggregateGherkinFilesToMqmResultFile(files, mqmFilePath, jobId, buildId, DTOFactory.getInstance());
 					final InputStream targetStream = new DataInputStream(new FileInputStream(mqmFilePath));
 					return targetStream;
 				} else {

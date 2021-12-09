@@ -4,6 +4,8 @@ import com.hp.octane.integrations.executor.TestsToRunConverterResult;
 import com.hp.octane.integrations.executor.TestsToRunConvertersFactory;
 import com.hp.octane.integrations.executor.TestsToRunFramework;
 
+import java.util.HashMap;
+
 public class TeamCityTestsToRunConverterBuilder {
 	public final static String TESTS_TO_RUN_PARAMETER = "testsToRun";
 	public final static String TESTING_FRAMEWORK_PARAMETER = "Testing_framework";
@@ -18,6 +20,6 @@ public class TeamCityTestsToRunConverterBuilder {
 	}
 
 	public TestsToRunConverterResult convert(String rawTests, String executingDirectory){
-		return TestsToRunConvertersFactory.createConverter(testsToRunFramework).convert(rawTests, executingDirectory);
+		return TestsToRunConvertersFactory.createConverter(testsToRunFramework).convert(rawTests, executingDirectory,new HashMap<>());
 	}
 }
