@@ -19,13 +19,11 @@ package com.hp.octane.plugins.jetbrains.teamcity;
 import com.hp.octane.integrations.CIPluginServices;
 import com.hp.octane.integrations.dto.DTOFactory;
 import com.hp.octane.integrations.dto.configuration.CIProxyConfiguration;
-import com.hp.octane.integrations.dto.general.CIJobsList;
-import com.hp.octane.integrations.dto.general.CIPluginInfo;
-import com.hp.octane.integrations.dto.general.CIServerInfo;
-import com.hp.octane.integrations.dto.general.CIServerTypes;
+import com.hp.octane.integrations.dto.general.*;
 import com.hp.octane.integrations.dto.parameters.CIParameter;
 import com.hp.octane.integrations.dto.parameters.CIParameters;
 import com.hp.octane.integrations.dto.pipelines.PipelineNode;
+import com.hp.octane.integrations.dto.snapshots.CIBuildStatus;
 import com.hp.octane.integrations.dto.tests.*;
 import com.hp.octane.integrations.exceptions.PermissionException;
 import com.hp.octane.integrations.testresults.GherkinUtils;
@@ -34,6 +32,7 @@ import com.hp.octane.integrations.utils.SdkConstants;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigStructure;
 import com.hp.octane.plugins.jetbrains.teamcity.configuration.TCConfigurationHolder;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.ModelCommonFactory;
+import com.hp.octane.plugins.jetbrains.teamcity.factories.TCPluginParametersFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.testrunner.TeamCityTestsToRunConverterBuilder;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SpringContextBridge;
@@ -74,6 +73,8 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 	private UserModel userModel;
 	private TCConfigurationHolder holder;
 	private ParameterFactory parameterFactory;
+	private TCPluginParametersFactory tcPluginParametersFactory;
+
 
 	public TeamCityPluginServicesImpl() {
 		projectManager = SpringContextBridge.services().getProjectManager();
@@ -83,6 +84,7 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 		userModel = buildServerEx.getUserModel();
 		holder = SpringContextBridge.services().getTCConfigurationHolder();
 		parameterFactory = SpringContextBridge.services().getParameterFactory();
+		tcPluginParametersFactory = new TCPluginParametersFactory();
 	}
 
 	private SUser getImpersonatedUser() {
@@ -180,12 +182,82 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 			SUser impersonatedUser = getImpersonatedUser();
 			List<SRunningBuild> runningBuilds = buildType.getRunningBuilds(impersonatedUser);
 			for (SRunningBuild runningBuild : runningBuilds) {
-				String interruptedMessage = "build number [" + runningBuild.getBuildNumber() + "] of project "
-						+ runningBuild.getFullName() + " was canceled";
-				runningBuild.setInterrupted(RunningBuildState.INTERRUPTED_BY_USER, impersonatedUser, interruptedMessage);
-				runningBuild.stop(impersonatedUser, interruptedMessage);
+				if(buildContainsParameter(runningBuild, ciParameters.getParameters().get(0))) {
+					String interruptedMessage = "build number [" + runningBuild.getBuildNumber() + "] of project "
+							+ runningBuild.getFullName() + " was canceled";
+					runningBuild.setInterrupted(RunningBuildState.INTERRUPTED_BY_USER, impersonatedUser, interruptedMessage);
+					runningBuild.stop(impersonatedUser, interruptedMessage);
+				}
+			}
+
+			List<SQueuedBuild> queuedBuilds = buildType.getQueuedBuilds(impersonatedUser);
+			for (SQueuedBuild queuedBuild : queuedBuilds) {
+				if(buildContainsParameter(queuedBuild, ciParameters.getParameters().get(0))) {
+					String interruptedMessage = "build number [" + queuedBuild.getItemId() + "] was canceled";
+					queuedBuild.removeFromQueue(impersonatedUser, interruptedMessage);
+				}
 			}
 		}
+	}
+
+	private boolean buildContainsParameter(Object build, CIParameter parameter) {
+		List<CIParameter> parameters;
+		if(build instanceof SRunningBuild) {
+			SRunningBuild runningBuild = (SRunningBuild) build;
+			parameters = tcPluginParametersFactory.obtainFromBuild(runningBuild);
+		} else if(build instanceof SQueuedBuild) {
+			SQueuedBuild queuedBuild = (SQueuedBuild) build;
+			parameters = tcPluginParametersFactory.obtainFromBuildType(queuedBuild.getBuildType());
+		} else {
+			SFinishedBuild finishedBuild = (SFinishedBuild) build;
+			parameters = tcPluginParametersFactory.obtainFromBuildType(finishedBuild.getBuildType());
+		}
+		return parameters.stream().anyMatch(ciParameter -> ciParameter.getName().equals(parameter.getName())
+				&& ciParameter.getValue().toString().equals(parameter.getValue().toString()));
+	}
+
+	@Override
+	public CIBuildStatusInfo getJobBuildStatus(String jobCiId, String parameterName, String parameterValue) {
+		CIParameter ciParameter = dtoFactory.newDTO(CIParameter.class)
+				.setName(parameterName)
+				.setValue(parameterValue);
+
+		CIBuildStatusInfo buildStatusInfo = dtoFactory.newDTO(CIBuildStatusInfo.class)
+				.setJobCiId(jobCiId)
+				.setParamName(parameterName)
+				.setParamValue(parameterValue);
+
+		SBuildType buildType = findBuildType(jobCiId);
+		if(buildType != null) {
+			SUser impersonatedUser = getImpersonatedUser();
+			List<SRunningBuild> runningBuilds = buildType.getRunningBuilds(impersonatedUser);
+
+			for(SRunningBuild runningBuild: runningBuilds) {
+				if(buildContainsParameter(runningBuild, ciParameter)) {
+					return buildStatusInfo.setBuildStatus(CIBuildStatus.RUNNING)
+							.setBuildCiId(String.valueOf(runningBuild.getBuildId()))
+							.setResult(modelCommonFactory.resultFromNativeStatus(runningBuild.getBuildStatus(), runningBuild.isInterrupted()));
+				}
+			}
+
+			List<SQueuedBuild> queuedBuilds = buildType.getQueuedBuilds(impersonatedUser);
+			for(SQueuedBuild queuedBuild: queuedBuilds) {
+				if(buildContainsParameter(queuedBuild, ciParameter)) {
+					return buildStatusInfo.setBuildStatus(CIBuildStatus.QUEUED)
+							.setBuildCiId(queuedBuild.getItemId());
+				}
+			}
+
+			List<SFinishedBuild> finishedBuilds = buildType.getHistory(impersonatedUser, true, false);;
+			for(SFinishedBuild finishedBuild: finishedBuilds) {
+				if(buildContainsParameter(finishedBuild, ciParameter)) {
+					return buildStatusInfo.setBuildStatus(CIBuildStatus.FINISHED)
+							.setBuildCiId(String.valueOf(finishedBuild.getBuildId()))
+							.setResult(modelCommonFactory.resultFromNativeStatus(finishedBuild.getBuildStatus(), true));
+				}
+			}
+		}
+		return buildStatusInfo;
 	}
 
 	private void setJobParams(CIParameters ciParameters, SBuildType buildType) {

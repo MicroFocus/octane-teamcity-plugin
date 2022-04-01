@@ -18,6 +18,7 @@ package com.hp.octane.plugins.jetbrains.teamcity.factories;
 
 import com.hp.octane.integrations.dto.DTOFactory;
 import com.hp.octane.integrations.dto.general.CIJobsList;
+import com.hp.octane.integrations.dto.parameters.CIParameter;
 import com.hp.octane.integrations.dto.pipelines.PipelineNode;
 import com.hp.octane.integrations.dto.pipelines.PipelinePhase;
 import com.hp.octane.integrations.dto.snapshots.CIBuildResult;
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by lazara on 04/01/2016.
@@ -41,7 +43,7 @@ import java.util.List;
 public class ModelCommonFactory {
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
 	private static final Logger logger = SDKBasedLoggerProvider.getLogger(ModelCommonFactory.class);
-
+	private static final String OCTANE_AUTO_ACTION_EXECUTION_ID = "octane_auto_action_execution_id";
 
 	@Autowired
 	private TCPluginParametersFactory parametersFactory;
@@ -61,10 +63,13 @@ public class ModelCommonFactory {
 				logger.info("Fetching data for project: " + buildType.getName());
 				if (!ids.contains(buildType.getInternalId())) {
 					ids.add(buildType.getInternalId());
+					List<CIParameter> ciParameters = parametersFactory.obtainFromBuildType(buildType)
+							.stream().filter(parameter -> !parameter.getName().equals(OCTANE_AUTO_ACTION_EXECUTION_ID))
+							.collect(Collectors.toList());
 					buildConf = dtoFactory.newDTO(PipelineNode.class)
 							.setJobCiId(buildType.getExternalId())
 							.setName(buildType.getName())
-							.setParameters(parametersFactory.obtainFromBuildType(buildType));
+							.setParameters(ciParameters);
 					list.add(buildConf);
 				}
 			}
@@ -78,10 +83,13 @@ public class ModelCommonFactory {
 		SBuildType root = projectManager.findBuildTypeByExternalId(buildConfigurationId);
 		PipelineNode treeRoot = null;
 		if (root != null) {
+			List<CIParameter> ciParameters = parametersFactory.obtainFromBuildType(root)
+					.stream().filter(parameter -> !parameter.getName().equals(OCTANE_AUTO_ACTION_EXECUTION_ID))
+					.collect(Collectors.toList());
 			treeRoot = dtoFactory.newDTO(PipelineNode.class)
 					.setJobCiId(root.getExternalId())
 					.setName(root.getName())
-					.setParameters(parametersFactory.obtainFromBuildType(root));
+					.setParameters(ciParameters);
 
 			List<PipelineNode> pipelineNodeList = buildFromDependenciesFlat(root.getOwnDependencies());
 			if (!pipelineNodeList.isEmpty()) {
