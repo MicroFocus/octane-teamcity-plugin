@@ -23,12 +23,14 @@ import com.hp.octane.integrations.dto.causes.CIEventCauseType;
 import com.hp.octane.integrations.dto.events.CIEvent;
 import com.hp.octane.integrations.dto.events.CIEventType;
 import com.hp.octane.integrations.dto.events.PhaseType;
+import com.hp.octane.integrations.dto.snapshots.CIBuildResult;
 import com.hp.octane.plugins.jetbrains.teamcity.OctaneTeamCityPlugin;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.ModelCommonFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.TCPluginParametersFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import jetbrains.buildServer.serverSide.*;
 import jetbrains.buildServer.serverSide.parameters.ParameterFactory;
+import jetbrains.buildServer.users.User;
 import jetbrains.buildServer.util.EventDispatcher;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -80,6 +82,26 @@ public class ProgressEventsListener extends BuildServerAdapter implements Parame
 			OctaneSDK.getClients().forEach(client -> client.getEventsService().publishEvent(event));
 		}
 	}
+
+    @Override
+    public void buildRemovedFromQueue(@NotNull SQueuedBuild queuedBuild, User user, String comment) {
+        TriggeredBy triggeredBy = queuedBuild.getTriggeredBy();
+        List<CIEventCause> causes = new ArrayList<>();
+
+        updateBuildTriggerCause(triggeredBy, causes);
+
+        CIEvent event = dtoFactory.newDTO(CIEvent.class)
+                .setEventType(CIEventType.FINISHED)
+                .setResult(CIBuildResult.ABORTED)
+                .setBuildCiId(queuedBuild.getItemId())
+                .setProject(queuedBuild.getBuildType().getExternalId())
+                .setDuration(0L)
+                .setProjectDisplayName(queuedBuild.getBuildType().getName())
+                .setParameters(tcPluginParametersFactory.obtainFromBuildType(queuedBuild.getBuildType()))
+                .setCauses(causes);
+
+        OctaneSDK.getClients().forEach(client -> client.getEventsService().publishEvent(event));
+    }
 
 	@Override
 	public void serverStartup() {
