@@ -252,7 +252,6 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 							.setBuildCiId(String.valueOf(runningBuild.getBuildId()));
 				}
 			}
-            // skip unneccessary check if we already find corresponded build
 
 			List<SFinishedBuild> finishedBuilds = buildType.getHistory(impersonatedUser, true, false);
 			for(SFinishedBuild finishedBuild: finishedBuilds) {
@@ -295,7 +294,6 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 				}
 				Parameter buildParam = parameterFactory.createSimpleParameter("build.my." + param.getName(), value);
 				buildType.addBuildParameter(buildParam);
-//                buildType.addBuildTrigger()
 			}
 		}
 	}

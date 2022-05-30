@@ -43,7 +43,6 @@ import java.util.stream.Collectors;
 public class ModelCommonFactory {
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
 	private static final Logger logger = SDKBasedLoggerProvider.getLogger(ModelCommonFactory.class);
-	private static final String OCTANE_AUTO_ACTION_EXECUTION_ID = "octane_auto_action_execution_id";
 
 	@Autowired
 	private TCPluginParametersFactory parametersFactory;
@@ -63,13 +62,10 @@ public class ModelCommonFactory {
 				logger.info("Fetching data for project: " + buildType.getName());
 				if (!ids.contains(buildType.getInternalId())) {
 					ids.add(buildType.getInternalId());
-					List<CIParameter> ciParameters = parametersFactory.obtainFromBuildType(buildType)
-							.stream().filter(parameter -> !parameter.getName().equals(OCTANE_AUTO_ACTION_EXECUTION_ID))
-							.collect(Collectors.toList());
 					buildConf = dtoFactory.newDTO(PipelineNode.class)
 							.setJobCiId(buildType.getExternalId())
-							.setName(buildType.getName())
-							.setParameters(ciParameters);
+							.setName(getFullNameFromBuildType(buildType))
+							.setParameters(parametersFactory.obtainFromBuildType(buildType));
 					list.add(buildConf);
 				}
 			}
@@ -83,13 +79,10 @@ public class ModelCommonFactory {
 		SBuildType root = projectManager.findBuildTypeByExternalId(buildConfigurationId);
 		PipelineNode treeRoot = null;
 		if (root != null) {
-			List<CIParameter> ciParameters = parametersFactory.obtainFromBuildType(root)
-					.stream().filter(parameter -> !parameter.getName().equals(OCTANE_AUTO_ACTION_EXECUTION_ID))
-					.collect(Collectors.toList());
 			treeRoot = dtoFactory.newDTO(PipelineNode.class)
 					.setJobCiId(root.getExternalId())
-					.setName(root.getName())
-					.setParameters(ciParameters);
+					.setName(getFullNameFromBuildType(root))
+					.setParameters(parametersFactory.obtainFromBuildType(root));
 
 			List<PipelineNode> pipelineNodeList = buildFromDependenciesFlat(root.getOwnDependencies());
 			if (!pipelineNodeList.isEmpty()) {
@@ -115,7 +108,7 @@ public class ModelCommonFactory {
 				if (build != null) {
 					PipelineNode buildItem = dtoFactory.newDTO(PipelineNode.class)
 							.setJobCiId(build.getExternalId())
-							.setName(build.getName())
+							.setName(getFullNameFromBuildType(build))
 							.setParameters(parametersFactory.obtainFromBuildType(build));
 					result.add(buildItem);
 					result.addAll(buildFromDependenciesFlat(build.getOwnDependencies()));
@@ -136,4 +129,9 @@ public class ModelCommonFactory {
 		}
 		return result;
 	}
+
+    private String getFullNameFromBuildType(SBuildType buildType) {
+        return buildType.getProjectName() + " - " + buildType.getName();
+    }
+
 }
