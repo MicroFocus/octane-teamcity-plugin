@@ -39,6 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -85,22 +86,18 @@ public class ProgressEventsListener extends BuildServerAdapter implements Parame
 
     @Override
     public void buildRemovedFromQueue(@NotNull SQueuedBuild queuedBuild, User user, String comment) {
-        TriggeredBy triggeredBy = queuedBuild.getTriggeredBy();
-        List<CIEventCause> causes = new ArrayList<>();
+        if(!Objects.isNull(user)) {
+            CIEvent event = dtoFactory.newDTO(CIEvent.class)
+                    .setEventType(CIEventType.FINISHED)
+                    .setResult(CIBuildResult.ABORTED)
+                    .setBuildCiId(queuedBuild.getItemId())
+                    .setProject(queuedBuild.getBuildType().getExternalId())
+                    .setDuration(0L)
+                    .setProjectDisplayName(queuedBuild.getBuildType().getName())
+                    .setParameters(tcPluginParametersFactory.obtainFromBuildType(queuedBuild.getBuildType()));
 
-        updateBuildTriggerCause(triggeredBy, causes);
-
-        CIEvent event = dtoFactory.newDTO(CIEvent.class)
-                .setEventType(CIEventType.FINISHED)
-                .setResult(CIBuildResult.ABORTED)
-                .setBuildCiId(queuedBuild.getItemId())
-                .setProject(queuedBuild.getBuildType().getExternalId())
-                .setDuration(0L)
-                .setProjectDisplayName(queuedBuild.getBuildType().getName())
-                .setParameters(tcPluginParametersFactory.obtainFromBuildType(queuedBuild.getBuildType()))
-                .setCauses(causes);
-
-        OctaneSDK.getClients().forEach(client -> client.getEventsService().publishEvent(event));
+            OctaneSDK.getClients().forEach(client -> client.getEventsService().publishEvent(event));
+        }
     }
 
 	@Override

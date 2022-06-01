@@ -68,7 +68,6 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
 	private final int MAX_SIZE = 255;
-    private final String OCTANE_AUTO_ACTION_EXECUTION_ID = "octane_auto_action_execution_id";
     private ProjectManager projectManager;
 	private BuildServerEx buildServerEx;
 	private ModelCommonFactory modelCommonFactory;
@@ -77,6 +76,7 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 	private TCConfigurationHolder holder;
 	private ParameterFactory parameterFactory;
 	private TCPluginParametersFactory tcPluginParametersFactory;
+
 
 
 	public TeamCityPluginServicesImpl() {
@@ -185,35 +185,36 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
 			SUser impersonatedUser = getImpersonatedUser();
 
             CIParameter octaneExecutionId = ciParameters.getParameters().stream()
-                    .filter(parameter -> parameter.getName().equals(OCTANE_AUTO_ACTION_EXECUTION_ID))
+                    .filter(parameter -> parameter.getName().equals(SdkConstants.JobParameters.OCTANE_AUTO_ACTION_EXECUTION_ID_PARAMETER_NAME))
                     .findAny().orElse(null);
 
             if (octaneExecutionId == null) {
                 List<SRunningBuild> runningBuilds = buildType.getRunningBuilds(impersonatedUser);
-                runningBuilds.stream().peek(runningBuild -> {
+                for(SRunningBuild runningBuild: runningBuilds) {
                     String interruptedMessage = "build number [" + runningBuild.getBuildNumber() + "] of project "
                             + runningBuild.getFullName() + " was canceled";
                     runningBuild.setInterrupted(RunningBuildState.INTERRUPTED_BY_USER, impersonatedUser, interruptedMessage);
                     runningBuild.stop(impersonatedUser, interruptedMessage);
-                });
+                }
             } else {
                 List<SQueuedBuild> queuedBuilds = buildType.getQueuedBuilds(impersonatedUser);
-                boolean wasStoppedInQueued = queuedBuilds.stream().filter(queuedBuild -> buildContainsParameter(queuedBuild, octaneExecutionId))
-                        .map(queuedBuild -> {
-                            String interruptedMessage = "build number [" + queuedBuild.getItemId() + "] was canceled";
-                            queuedBuild.removeFromQueue(impersonatedUser, interruptedMessage);
-                            return true;
-                        }).findAny().orElse(false);
+                for(SQueuedBuild queuedBuild: queuedBuilds) {
+                    if(buildContainsParameter(queuedBuild, octaneExecutionId)) {
+                        String interruptedMessage = "build number [" + queuedBuild.getItemId() + "] was canceled";
+                        queuedBuild.removeFromQueue(impersonatedUser, interruptedMessage);
+                        return;
+                    }
+                }
 
-                if(!wasStoppedInQueued) {
-                    List<SRunningBuild> runningBuilds = buildType.getRunningBuilds(impersonatedUser);
-                    runningBuilds.stream().filter(runningBuild -> buildContainsParameter(runningBuild, octaneExecutionId))
-                            .peek(runningBuild -> {
-                                String interruptedMessage = "build number [" + runningBuild.getBuildNumber() + "] of project "
-                                        + runningBuild.getFullName() + " was canceled";
-                                runningBuild.setInterrupted(RunningBuildState.INTERRUPTED_BY_USER, impersonatedUser, interruptedMessage);
-                                runningBuild.stop(impersonatedUser, interruptedMessage);
-                            });
+                List<SRunningBuild> runningBuilds = buildType.getRunningBuilds(impersonatedUser);
+                for(SRunningBuild runningBuild: runningBuilds) {
+                    if(buildContainsParameter(runningBuild, octaneExecutionId)) {
+                        String interruptedMessage = "build number [" + runningBuild.getBuildNumber() + "] of project "
+                                + runningBuild.getFullName() + " was canceled";
+                        runningBuild.setInterrupted(RunningBuildState.INTERRUPTED_BY_USER, impersonatedUser, interruptedMessage);
+                        runningBuild.stop(impersonatedUser, interruptedMessage);
+                        return;
+                    }
                 }
             }
 		}
