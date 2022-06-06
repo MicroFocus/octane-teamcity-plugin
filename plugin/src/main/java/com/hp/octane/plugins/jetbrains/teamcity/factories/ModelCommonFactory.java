@@ -18,6 +18,7 @@ package com.hp.octane.plugins.jetbrains.teamcity.factories;
 
 import com.hp.octane.integrations.dto.DTOFactory;
 import com.hp.octane.integrations.dto.general.CIJobsList;
+import com.hp.octane.integrations.dto.parameters.CIParameter;
 import com.hp.octane.integrations.dto.pipelines.PipelineNode;
 import com.hp.octane.integrations.dto.pipelines.PipelinePhase;
 import com.hp.octane.integrations.dto.snapshots.CIBuildResult;
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by lazara on 04/01/2016.
@@ -41,7 +43,6 @@ import java.util.List;
 public class ModelCommonFactory {
 	private static final DTOFactory dtoFactory = DTOFactory.getInstance();
 	private static final Logger logger = SDKBasedLoggerProvider.getLogger(ModelCommonFactory.class);
-
 
 	@Autowired
 	private TCPluginParametersFactory parametersFactory;
@@ -63,7 +64,7 @@ public class ModelCommonFactory {
 					ids.add(buildType.getInternalId());
 					buildConf = dtoFactory.newDTO(PipelineNode.class)
 							.setJobCiId(buildType.getExternalId())
-							.setName(buildType.getName())
+							.setName(getFullNameFromBuildType(buildType))
 							.setParameters(parametersFactory.obtainFromBuildType(buildType));
 					list.add(buildConf);
 				}
@@ -80,7 +81,7 @@ public class ModelCommonFactory {
 		if (root != null) {
 			treeRoot = dtoFactory.newDTO(PipelineNode.class)
 					.setJobCiId(root.getExternalId())
-					.setName(root.getName())
+					.setName(getFullNameFromBuildType(root))
 					.setParameters(parametersFactory.obtainFromBuildType(root));
 
 			List<PipelineNode> pipelineNodeList = buildFromDependenciesFlat(root.getOwnDependencies());
@@ -107,7 +108,7 @@ public class ModelCommonFactory {
 				if (build != null) {
 					PipelineNode buildItem = dtoFactory.newDTO(PipelineNode.class)
 							.setJobCiId(build.getExternalId())
-							.setName(build.getName())
+							.setName(getFullNameFromBuildType(build))
 							.setParameters(parametersFactory.obtainFromBuildType(build));
 					result.add(buildItem);
 					result.addAll(buildFromDependenciesFlat(build.getOwnDependencies()));
@@ -128,4 +129,9 @@ public class ModelCommonFactory {
 		}
 		return result;
 	}
+
+    private String getFullNameFromBuildType(SBuildType buildType) {
+        return buildType.getProjectName() + " - " + buildType.getName();
+    }
+
 }
