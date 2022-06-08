@@ -27,7 +27,7 @@ In your TeamCity server's user interface, locate the configuration area for the 
 1. Go to Administration.
 2. Under Server Administration, click ALM Octane CI Plugin.
 
-For further configuration information please see the ["Configure the ALM Octane CI plugin to access ALM Octane"](http://hpe-nga-staging.s3-website-us-west-1.amazonaws.com/en/inter-push-1/Online/Content/AdminGuide/how_config_CI_plugin.htm?Highlight=teamcity) in our help center
+For further configuration information please see the ["Configure the ALM Octane CI plugin to access ALM Octane"](https://admhelp.microfocus.com/octane/en/16.0.100-16.0.400/Online/Content/AdminGuide/how_config_CI_plugin.htm#mt-item-2) in our help center
 
 #### Disclaimer
 
