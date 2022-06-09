@@ -275,7 +275,7 @@ public class TeamCityPluginServicesImpl extends CIPluginServices {
             parameters = tcPluginParametersFactory.obtainFromBuild(runningBuild);
         } else if(build instanceof SQueuedBuild) {
             SQueuedBuild queuedBuild = (SQueuedBuild) build;
-            parameters = tcPluginParametersFactory.obtainFromBuildType(queuedBuild.getBuildType());
+            parameters = tcPluginParametersFactory.obtainFromQueuedBuild(queuedBuild);
         } else {
             SFinishedBuild finishedBuild = (SFinishedBuild) build;
             parameters = tcPluginParametersFactory.obtainFromBuild(finishedBuild);

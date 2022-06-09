@@ -22,6 +22,7 @@ import com.hp.octane.integrations.dto.parameters.CIParameterType;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
 import jetbrains.buildServer.serverSide.SBuild;
 import jetbrains.buildServer.serverSide.SBuildType;
+import jetbrains.buildServer.serverSide.SQueuedBuild;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
@@ -119,5 +120,22 @@ public class TCPluginParametersFactory {
             return true;
         }
         return false;
+    }
+
+    public List<CIParameter> obtainFromQueuedBuild(SQueuedBuild build) {
+        List<CIParameter> result = new LinkedList<>();
+        CIParameter tmp;
+        if (build != null && !build.getBuildPromotion().getParameters().isEmpty()) {
+            Set<String> paramsNames = getParametersNameSet(build.getBuildPromotion().getParameters());
+            for (String paramName : paramsNames) {
+                String name = getOriginalParamName(paramName);
+                tmp = dtoFactory.newDTO(CIParameter.class)
+                        .setType(CIParameterType.STRING)
+                        .setName(name)
+                        .setValue(build.getBuildPromotion().getParameters().get(paramName));
+                result.add(tmp);
+            }
+        }
+        return result;
     }
 }

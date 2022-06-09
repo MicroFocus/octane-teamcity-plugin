@@ -94,7 +94,7 @@ public class ProgressEventsListener extends BuildServerAdapter implements Parame
                     .setProject(queuedBuild.getBuildType().getExternalId())
                     .setDuration(0L)
                     .setProjectDisplayName(queuedBuild.getBuildType().getName())
-                    .setParameters(tcPluginParametersFactory.obtainFromBuildType(queuedBuild.getBuildType()));
+                    .setParameters(tcPluginParametersFactory.obtainFromQueuedBuild(queuedBuild));
 
             OctaneSDK.getClients().forEach(client -> client.getEventsService().publishEvent(event));
         }
