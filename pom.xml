@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.hpe.adm.octane.ciplugins</groupId>
     <artifactId>teamcity-ci-plugin-suite</artifactId>
-    <version>1.4.6-SNAPSHOT</version>
+    <version>1.4.7-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>ALM Octane teamcity plugin suite</name>
@@ -26,13 +26,13 @@
             <roles>
                 <role>Global owner and maintainer</role>
             </roles>
-            <organization>MicroFocus</organization>
+            <organization>OpenText</organization>
         </developer>
         <developer>
             <id>lazara3</id>
             <name>Ayellet Lazar</name>
             <email>ayellet.lazar@microfocus.com</email>
-            <organization>MicroFocus</organization>
+            <organization>OpenText</organization>
         </developer>
     </developers>
 

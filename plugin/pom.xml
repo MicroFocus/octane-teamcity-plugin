@@ -22,7 +22,7 @@
     <parent>
         <artifactId>teamcity-ci-plugin-suite</artifactId>
         <groupId>com.hpe.adm.octane.ciplugins</groupId>
-        <version>1.4.6-SNAPSHOT</version>
+        <version>1.4.7-SNAPSHOT</version>
     </parent>
 
     <properties>

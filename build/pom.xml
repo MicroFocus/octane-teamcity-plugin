@@ -5,7 +5,7 @@
 	<parent>
 		<artifactId>teamcity-ci-plugin-suite</artifactId>
 		<groupId>com.hpe.adm.octane.ciplugins</groupId>
-		<version>1.4.6-SNAPSHOT</version>
+		<version>1.4.7-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>teamcity-ci-plugin-build</artifactId>
@@ -14,7 +14,7 @@
 		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 		<teamcity.plugin.version>${version}</teamcity.plugin.version>
 		<teamcity.plugin.vendorName>Plugin vendor name</teamcity.plugin.vendorName>
-		<teamcity.plugin.vendorUrl>https://www.microfocus.com/</teamcity.plugin.vendorUrl>
+		<teamcity.plugin.vendorUrl>https://www.microfocus.com/opentext</teamcity.plugin.vendorUrl>
 		<!--zip.location>${project.parent.basedir}/target/teamcity-ci-plugin.zip</zip.location-->
 		<zip.location>../target/hp-lifecycle-management-teamcity-ci-plugin.zip</zip.location>
 		<extraction.folder>${project.build.directory}/extracted</extraction.folder>

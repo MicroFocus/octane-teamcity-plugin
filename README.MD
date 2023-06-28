@@ -1,5 +1,3 @@
-![MICROFOCUS LOGO](https://upload.wikimedia.org/wikipedia/commons/4/4e/MicroFocus_logo_blue.png)
-
 # ALM Octane server-side plugin for Teamcity
 
 Project status: [![Build status](https://ci.appveyor.com/api/projects/status/mby6wig2w6x5j22o?svg=true)](https://ci.appveyor.com/project/OctaneCIPlugins/octane-teamcity-plugin)
