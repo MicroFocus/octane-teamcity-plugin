@@ -233,6 +233,7 @@ public class ConfigurationActionsController implements Controller {
 				result.setSharedSpace(sp);
 				result.setLocation(location);
 				result.setImpersonatedUser(newConf.getImpersonatedUser());
+				result.setSendScmData(newConf.isSendScmData());
 			}
 		}
 

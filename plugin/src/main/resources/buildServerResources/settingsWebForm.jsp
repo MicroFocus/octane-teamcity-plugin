@@ -40,7 +40,7 @@
                     if (xhttp.status === 200) {
                         var json = JSON.parse(xhttp.responseText);
                         for (var i = 0; i < json.length; i++) {
-                            addSP(i, json[i].uiLocation, json[i].username, json[i].secretPassword, json[i].impersonatedUser, json[i].identity);
+                            addSP(i, json[i].uiLocation, json[i].username, json[i].secretPassword, json[i].impersonatedUser, json[i].identity, json[i].sendScmData);
                         }
                     }
                 }
@@ -76,10 +76,10 @@
         }
 
         function addNewSP() {
-            addSP(getConfCount() + 1, '', '', '', '', '');
+            addSP(getConfCount() + 1, '', '', '', '', '', true);
         }
 
-        function addSP(index, server, clientId, clientSecret, impersonatedUser, instanceId) {
+        function addSP(index, server, clientId, clientSecret, impersonatedUser, instanceId, sendScmData) {
             // alert(index + ', ' + server + ', ' + clientId + ', ' + clientSecret + ', ' + instanceId + ', ' + sharedSpace);
             var spBlock = "<table name='spConfigTable' class='runnerFormTable' id='connectionsTable" + index + "' >" +
                 "<tr>" +
@@ -122,6 +122,21 @@
                 "<input type='hidden' name='instanceId" + index + "' id='instanceId" + index + "'   value=''>" +
                 "</tr>" +
 
+                "<tr>" +
+                "<th></th>" +
+                "<td>" +
+                "<a href='javascript:void(0);' id='advancedToggle" + index + "' onClick='toggleAdvanced(" + index + ")' style='font-weight:bold;'>&#9656; Advanced configuration</a>" +
+                "</td>" +
+                "</tr>" +
+
+                "<tr name='advancedSection" + index + "' id='advancedSection" + index + "' style='display:none;'>" +
+                "<th><label for='sendScmData" + index + "'>Send SCM data </label></th>" +
+                "<td>" +
+                "<input type='checkbox' name='sendScmData" + index + "' id='sendScmData" + index + "' checked>" +
+                "<span style='font-size: xx-small; margin-left: 5px;'>Send SCM (commit) data events to ALM Octane</span>" +
+                "</td>" +
+                "</tr>" +
+
                 "<tr  >" +
                 "<th><label for='psw'><span class='mandatoryAsterix' title='Mandatory field'></span></label></th>" +
                 "<td>" +
@@ -139,6 +154,22 @@
             document.getElementById("server" + index).value = server;
             document.getElementById("impersonatedUser" + index).value = impersonatedUser;
             document.getElementById("instanceId" + index).value = instanceId;
+            document.getElementById("sendScmData" + index).checked = (sendScmData !== false);
+            if (sendScmData === false) {
+                toggleAdvanced(index);
+            }
+        }
+
+        function toggleAdvanced(index) {
+            var section = document.getElementById("advancedSection" + index);
+            var toggle = document.getElementById("advancedToggle" + index);
+            if (section.style.display === "none") {
+                section.style.display = "";
+                toggle.innerHTML = "&#9662; Advanced configuration";
+            } else {
+                section.style.display = "none";
+                toggle.innerHTML = "&#9656; Advanced configuration";
+            }
         }
 
         function htmlToElement(html) {
@@ -176,6 +207,7 @@
                 var server = document.getElementsByClassName("runnerFormTable")[i].querySelectorAll("tbody > tr > td > input[name^='server']")[0].value;
                 var impersonatedUser = document.getElementsByClassName("runnerFormTable")[i].querySelectorAll("tbody > tr > td > input[name^='impersonatedUser']")[0].value;
                 var instanceId = document.getElementsByClassName("runnerFormTable")[i].querySelectorAll("tbody > tr > input[name^='instanceId']")[0].value;
+                var sendScmData = document.getElementsByClassName("runnerFormTable")[i].querySelectorAll("tbody > tr > td > input[name^='sendScmData']")[0].checked;
 
                 config.push(
                     {
@@ -183,7 +215,8 @@
                         "username": username,
                         "secretPassword": password,
                         "impersonatedUser": impersonatedUser,
-                        "identity": instanceId
+                        "identity": instanceId,
+                        "sendScmData": sendScmData
                     }
                 );
             }

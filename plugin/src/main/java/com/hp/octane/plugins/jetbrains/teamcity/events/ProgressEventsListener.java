@@ -36,11 +36,14 @@ import com.hp.octane.integrations.dto.causes.CIEventCauseType;
 import com.hp.octane.integrations.dto.events.CIEvent;
 import com.hp.octane.integrations.dto.events.CIEventType;
 import com.hp.octane.integrations.dto.events.PhaseType;
+import com.hp.octane.integrations.dto.scm.SCMData;
 import com.hp.octane.integrations.dto.snapshots.CIBuildResult;
 import com.hp.octane.plugins.jetbrains.teamcity.OctaneTeamCityPlugin;
+import com.hp.octane.plugins.jetbrains.teamcity.configuration.OctaneConfigStructure;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.ModelCommonFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.factories.TCPluginParametersFactory;
 import com.hp.octane.plugins.jetbrains.teamcity.utils.SDKBasedLoggerProvider;
+import com.hp.octane.plugins.jetbrains.teamcity.utils.SpringContextBridge;
 import jetbrains.buildServer.serverSide.*;
 import jetbrains.buildServer.serverSide.parameters.ParameterFactory;
 import jetbrains.buildServer.users.User;
@@ -144,6 +147,12 @@ public class ProgressEventsListener extends BuildServerAdapter implements Parame
 		List<CIEventCause> causes = new ArrayList<>();
 
 		updateBuildTriggerCause(triggeredBy, causes);
+
+		SCMData scmData = ScmUtils.getScmData(build);
+		if (scmData == null || scmData.getCommits().isEmpty()) {
+			return;
+		}
+
 		CIEvent scmEvent = dtoFactory.newDTO(CIEvent.class)
 				.setEventType(CIEventType.SCM)
 				.setCauses(causes)
@@ -155,9 +164,19 @@ public class ProgressEventsListener extends BuildServerAdapter implements Parame
 				.setStartTime(System.currentTimeMillis())
 				.setParameters(tcPluginParametersFactory.obtainFromBuild(build))
 				.setPhaseType(PhaseType.INTERNAL)
-				.setScmData(ScmUtils.getScmData(build));
+				.setScmData(scmData);
 
-		OctaneSDK.getClients().forEach(client -> client.getEventsService().publishEvent(scmEvent));
+		OctaneSDK.getClients().stream()
+				.filter(client -> isScmDataEnabled(client.getInstanceId()))
+				.forEach(client -> client.getEventsService().publishEvent(scmEvent));
+	}
+
+	private boolean isScmDataEnabled(String instanceId) {
+		return SpringContextBridge.services().getTCConfigurationHolder().getConfigs().stream()
+				.filter(conf -> instanceId.equals(conf.getIdentity()))
+				.findAny()
+				.map(OctaneConfigStructure::isSendScmData)
+				.orElse(true);
 	}
 
 	@Override
