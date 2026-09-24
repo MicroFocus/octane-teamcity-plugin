@@ -59,6 +59,8 @@ public class OctaneConfigStructure implements Cloneable {
 	private String location;
 	@JacksonXmlProperty(localName ="sharedSpace" )
 	private String sharedSpace;
+	@JacksonXmlProperty(localName ="sendScmData" )
+	private boolean sendScmData = true;
 
 	public String getIdentity() {
 		return identity;
@@ -130,6 +132,14 @@ public class OctaneConfigStructure implements Cloneable {
 		this.sharedSpace = sharedSpace;
 	}
 
+	public boolean isSendScmData() {
+		return sendScmData;
+	}
+
+	public void setSendScmData(boolean sendScmData) {
+		this.sendScmData = sendScmData;
+	}
+
 	@Override
 	public String toString() {
 		return "OctaneConfigStructure { " +
@@ -139,7 +149,8 @@ public class OctaneConfigStructure implements Cloneable {
 				", apiKey: " + username +
 				", location: " + location +
 				", impersonatedUser: " + impersonatedUser +
-				", sharedSpace: " + sharedSpace + '}';
+				", sharedSpace: " + sharedSpace +
+				", sendScmData: " + sendScmData + '}';
 	}
 
 	@Override
